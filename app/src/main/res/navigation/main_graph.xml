@@ -14,6 +14,18 @@
         <action
             android:id="@+id/action_splashFragment_to_autentication"
             app:destination="@id/autentication"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true"
+            />
+        <action
+            android:id="@+id/action_splashFragment_to_home"
+            app:destination="@id/home"
+            app:popUpTo="@id/homeFragment"
+            app:popUpToInclusive="true"
+            />
+        <action
+            android:id="@+id/action_splashFragment_to_homeFragment"
+            app:destination="@id/homeFragment"
             app:popUpTo="@id/splashFragment"
             app:popUpToInclusive="true"
             />
@@ -47,7 +59,10 @@
             tools:layout="@layout/fragment_recover_account" />
         <action
             android:id="@+id/action_global_homeFragment"
-            app:destination="@id/homeFragment" />
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true"
+            />
     </navigation>
     <fragment
         android:id="@+id/homeFragment"
@@ -57,6 +72,12 @@
         <action
             android:id="@+id/action_homeFragment_to_formTaskFragment"
             app:destination="@id/formTaskFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_autentication"
+            app:destination="@id/autentication"
+            app:popUpTo="@id/homeFragment"
+            app:popUpToInclusive="true"
+            />
     </fragment>
     <fragment
         android:id="@+id/formTaskFragment"

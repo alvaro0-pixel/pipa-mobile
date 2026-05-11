@@ -92,6 +92,7 @@
                 android:textColor="@color/white"/>
         </LinearLayout>
         <ProgressBar
+            android:id="@+id/progressBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:indeterminateTint="@color/white"
