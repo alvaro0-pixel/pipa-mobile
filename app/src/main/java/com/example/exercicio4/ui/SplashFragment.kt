@@ -51,6 +51,7 @@ class SplashFragment : Fragment() {
             }
         } catch (e: Exception) {
             Toast.makeText(requireContext(), e.message.toString(), Toast.LENGTH_SHORT).show()
+            findNavController().navigate(R.id.action_splashFragment_to_autentication)
         }
     }
 

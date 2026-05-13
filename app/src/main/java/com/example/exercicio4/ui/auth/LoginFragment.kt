@@ -32,7 +32,7 @@ class LoginFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        auth = FirebaseAuth.getInstance()
         initListener()
     }
 
@@ -52,6 +52,7 @@ class LoginFragment : Fragment() {
     private fun validateData() {
         val email = binding.editextEmail.text.toString().trim()
         val senha = binding.editextSenha.text.toString().trim()
+
         if (email.isNotBlank()) {
             if (senha.isNotBlank()) {
                 binding.progressBar.isVisible = true
