@@ -37,4 +37,8 @@
 
     <string name="description_empty_form_task_fragment">Preencha uma descrição.</string>
 
+
+    <string name="text_save_success_form_task_fragment">Tarefa salva com sucesso</string>
+    <string name="error_generic">Ocorreu um erro! Por favor tente novamente mais tarde.</string>
+
 </resources>
