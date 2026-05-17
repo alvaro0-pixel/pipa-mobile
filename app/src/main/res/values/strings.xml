@@ -40,5 +40,7 @@
 
     <string name="text_save_success_form_task_fragment">Tarefa salva com sucesso</string>
     <string name="error_generic">Ocorreu um erro! Por favor tente novamente mais tarde.</string>
+    <string name="text_list_task_empty">Nenhuma tarega cadastrada!</string>
+    <string name="text_list_task_load">Aguarde, estamos carregando as informações!</string>
 
 </resources>
