@@ -15,6 +15,7 @@ import com.example.exercicio4.data.model.Status
 import com.example.exercicio4.data.model.Task
 import com.example.exercicio4.databinding.FragmentTodoBinding
 import com.example.exercicio4.ui.adapter.TaskAdapter
+import com.example.exercicio4.util.showBottomSheet
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -76,7 +77,12 @@ class TodoFragment : Fragment() {
                 Toast.makeText(requireContext(), "Anterior", Toast.LENGTH_SHORT).show()
             }
             TaskAdapter.SELECT_REMOVER -> {
-                Toast.makeText(requireContext(), "Removendo ${task.description}", Toast.LENGTH_SHORT).show()
+                showBottomSheet(titleDialog = R.string.text_title_dialog_delete,
+                    message = getString(R.string.text_message_dialog_delete),
+                    titleButton = R.string.text_button_dialog_confirm,
+                    onClick = {
+                        deleteTask(task)
+                    })
             }
             TaskAdapter.SELECT_EDIT -> {
                 Toast.makeText(requireContext(), "Editando ${task.description}", Toast.LENGTH_SHORT).show()
@@ -114,6 +120,20 @@ class TodoFragment : Fragment() {
                     Toast.makeText(requireContext(), R.string.error_generic, Toast.LENGTH_SHORT).show()
                 }
             })
+    }
+
+    private fun deleteTask(task: Task) {
+        reference
+            .child("task")
+            .child(auth.currentUser?.uid ?: "")
+            .child(task.id)
+            .removeValue().addOnCompleteListener { result ->
+                if(result.isSuccessful){
+                    Toast.makeText(requireContext(),R.string.text_delete_sucess_task, Toast.LENGTH_SHORT).show()
+                } else{
+                    Toast.makeText(requireContext(),R.string.error_generic, Toast.LENGTH_SHORT).show()
+                }
+            }
     }
 
     private fun listEmpty(taskList: List<Task>){
