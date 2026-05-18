@@ -83,5 +83,10 @@
         android:id="@+id/formTaskFragment"
         android:name="com.example.exercicio4.ui.FormTaskFragment"
         android:label="fragment_form_task"
-        tools:layout="@layout/fragment_form_task" />
+        tools:layout="@layout/fragment_form_task" >
+        <argument
+            android:name="task"
+            app:argType="com.example.exercicio4.data.model.Task"
+            app:nullable="true" />
+    </fragment>
 </navigation>

@@ -40,11 +40,13 @@
 
     <string name="text_save_success_form_task_fragment">Tarefa salva com sucesso</string>
     <string name="error_generic">Ocorreu um erro! Por favor tente novamente mais tarde.</string>
-    <string name="text_list_task_empty">Nenhuma tarega cadastrada!</string>
+    <string name="text_list_task_empty">Nenhuma tarefa cadastrada!</string>
     <string name="text_list_task_load">Aguarde, estamos carregando as informações!</string>
     <string name="text_delete_sucess_task">Tarefa removida com sucesso.</string>
     <string name="text_title_dialog_delete">Deseja remover essa tarefa?</string>
     <string name="text_message_dialog_delete">Aperte em confirmar para remover a tarefa</string>
     <string name="text_button_dialog_confirm">Confirmar</string>
+    <string name="text_toolbar_update_form_task_fragment">Editando tarefa...</string>
+    <string name="text_update_sucess_form_task_fragment">Tarefa editada com sucesso</string>
 
 </resources>

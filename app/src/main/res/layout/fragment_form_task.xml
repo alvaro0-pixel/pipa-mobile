@@ -22,7 +22,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Recuperar Conta"
+            android:text="Nova Tarefa"
+            android:id="@+id/textToolbar"
             android:textColor="@color/white"
             android:layout_gravity="center_horizontal"
             />
