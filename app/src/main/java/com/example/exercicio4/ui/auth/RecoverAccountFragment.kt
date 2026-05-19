@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.core.view.isVisible
 import com.example.exercicio4.R
 import com.example.exercicio4.databinding.FragmentRecoverAccountBinding
+import com.example.exercicio4.util.FirebaseHelper
 import com.example.exercicio4.util.initToolbar
 import com.example.exercicio4.util.showBottomSheet
 import com.google.firebase.auth.FirebaseAuth
@@ -62,7 +63,7 @@ class RecoverAccountFragment : Fragment() {
                     if (task.isSuccessful) {
                         showBottomSheet(message = getString(R.string.text_message_recover_account_fragment))
                     } else {
-                        Toast.makeText(requireContext(), task.exception?.message, Toast.LENGTH_SHORT).show()
+                        showBottomSheet(message = getString(FirebaseHelper.validError(task.exception?.message.toString())))
                     }
                 }
         } catch (e: Exception) {
