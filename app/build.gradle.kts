@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.exercicio4"
+    namespace = "com.example.pipa"
     compileSdk = 36
 
     defaultConfig {

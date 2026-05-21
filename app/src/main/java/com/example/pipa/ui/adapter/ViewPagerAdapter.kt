@@ -1,4 +1,4 @@
-package com.example.exercicio4.ui.adapter
+package com.example.pipa.ui.adapter
 
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity

@@ -1,4 +1,4 @@
-package com.example.exercicio4.data.model
+package com.example.pipa.data.model
 
 enum class Status {
     TODO,

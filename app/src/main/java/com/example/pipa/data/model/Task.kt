@@ -1,8 +1,7 @@
-package com.example.exercicio4.data.model
+package com.example.pipa.data.model
 
 import android.os.Parcelable
-import com.example.exercicio4.util.FirebaseHelper
-import com.google.firebase.Firebase
+import com.example.pipa.util.FirebaseHelper
 import kotlinx.parcelize.Parcelize
 
 @Parcelize

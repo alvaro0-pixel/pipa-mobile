@@ -1,9 +1,9 @@
-package com.example.exercicio4.ui
+package com.example.pipa.ui
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.exercicio4.data.model.Task
+import com.example.pipa.data.model.Task
 
 class TaskViewModel : ViewModel() {
 

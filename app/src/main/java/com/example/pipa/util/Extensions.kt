@@ -1,10 +1,10 @@
-package com.example.exercicio4.util
+package com.example.pipa.util
 
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
-import com.example.exercicio4.R
-import com.example.exercicio4.databinding.BottomSheetBinding
+import com.example.pipa.R
+import com.example.pipa.databinding.BottomSheetBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 
 fun Fragment.initToolbar(toolbar: Toolbar) {

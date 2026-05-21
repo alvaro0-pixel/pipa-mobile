@@ -4,7 +4,8 @@
     <color name="white">#F4F0F0</color>
     <color name="green">#37FF00</color>
 
-    <color name="color_default">#1C89D3</color>
+    <color name="color_default">#3D7C3F</color>
+    <color name="color_default_dark">#2B542D</color>
     <color name="color_delete">#DB1616</color>
     <color name="color_details">#8BE4DD</color>
 

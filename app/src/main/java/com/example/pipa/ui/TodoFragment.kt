@@ -1,6 +1,5 @@
-package com.example.exercicio4.ui
+package com.example.pipa.ui
 
-import android.R.attr.description
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -10,15 +9,14 @@ import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.exercicio4.R
-import com.example.exercicio4.data.model.Status
-import com.example.exercicio4.data.model.Task
-import com.example.exercicio4.databinding.FragmentTodoBinding
-import com.example.exercicio4.ui.adapter.TaskAdapter
-import com.example.exercicio4.util.FirebaseHelper
-import com.example.exercicio4.util.showBottomSheet
+import com.example.pipa.R
+import com.example.pipa.data.model.Status
+import com.example.pipa.data.model.Task
+import com.example.pipa.databinding.FragmentTodoBinding
+import com.example.pipa.ui.adapter.TaskAdapter
+import com.example.pipa.util.FirebaseHelper
+import com.example.pipa.util.showBottomSheet
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth

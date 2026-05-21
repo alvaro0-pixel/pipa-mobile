@@ -1,4 +1,4 @@
-package com.example.exercicio4.ui
+package com.example.pipa.ui
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -8,14 +8,14 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.exercicio4.R
-import com.example.exercicio4.data.model.Status
-import com.example.exercicio4.data.model.Task
-import com.example.exercicio4.databinding.FragmentDoneBinding
-import com.example.exercicio4.ui.adapter.TaskAdapter
+import com.example.pipa.R
+import com.example.pipa.data.model.Status
+import com.example.pipa.data.model.Task
+import com.example.pipa.databinding.FragmentDoingBinding
+import com.example.pipa.ui.adapter.TaskAdapter
 
-class DoneFragment : Fragment() {
-    private var _binding: FragmentDoneBinding? = null
+class DoingFragment : Fragment() {
+    private var _binding: FragmentDoingBinding? = null
     private val binding get() = _binding!!
     private lateinit var taskAdapter: TaskAdapter
 
@@ -24,7 +24,7 @@ class DoneFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentDoneBinding.inflate(inflater, container, false)
+        _binding = FragmentDoingBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -71,11 +71,11 @@ class DoneFragment : Fragment() {
 
     private fun getTask() {
         val taskList = listOf(
-            Task("0", "Criar nova tela do app", Status.DONE),
-            Task("1", "Validar informações na tela de login", Status.DONE),
-            Task("2", "Adicionar nova funcionalidade no app", Status.DONE),
-            Task("3", "Salvar token Localmente", Status.DONE),
-            Task("4", "Criar funcionalidade de logout no app", Status.DONE)
+            Task("0", "Criar nova tela do app", Status.DOING),
+            Task("1", "Validar informações na tela de login", Status.DOING),
+            Task("2", "Adicionar nova funcionalidade no app", Status.DOING),
+            Task("3", "Salvar token Localmente", Status.DOING),
+            Task("4", "Criar funcionalidade de logout no app", Status.DOING)
         )
         taskAdapter.submitList(taskList)
     }

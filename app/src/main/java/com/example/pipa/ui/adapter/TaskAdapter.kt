@@ -1,18 +1,17 @@
-package com.example.exercicio4.ui.adapter
+package com.example.pipa.ui.adapter
 
 import android.content.Context
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.example.exercicio4.R
-import com.example.exercicio4.data.model.Status
-import com.example.exercicio4.data.model.Task
-import com.example.exercicio4.databinding.ItemTaskBinding
+import com.example.pipa.R
+import com.example.pipa.data.model.Status
+import com.example.pipa.data.model.Task
+import com.example.pipa.databinding.ItemTaskBinding
 
 class TaskAdapter(
     private val context: Context,

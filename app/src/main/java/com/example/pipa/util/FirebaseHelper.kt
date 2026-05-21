@@ -1,7 +1,7 @@
-package com.example.exercicio4.util
+package com.example.pipa.util
 
 import com.google.firebase.Firebase
-import com.example.exercicio4.R
+import com.example.pipa.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.database
 

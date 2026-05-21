@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/splashFragment"
-        android:name="com.example.exercicio4.ui.SplashFragment"
+        android:name="com.example.pipa.ui.SplashFragment"
         android:label="fragment_splash"
         tools:layout="@layout/fragment_splash">
 
@@ -30,7 +30,7 @@
 
         <fragment
             android:id="@+id/loginFragment"
-            android:name="com.example.exercicio4.ui.auth.LoginFragment"
+            android:name="com.example.pipa.ui.auth.LoginFragment"
             android:label="fragment_login"
             tools:layout="@layout/fragment_login">
             <action
@@ -43,13 +43,13 @@
 
         <fragment
             android:id="@+id/registerFragment"
-            android:name="com.example.exercicio4.ui.auth.RegisterFragment"
+            android:name="com.example.pipa.ui.auth.RegisterFragment"
             android:label="fragment_register"
             tools:layout="@layout/fragment_register" />
 
         <fragment
             android:id="@+id/recoverAccountFragment"
-            android:name="com.example.exercicio4.ui.auth.RecoverAccountFragment"
+            android:name="com.example.pipa.ui.auth.RecoverAccountFragment"
             android:label="fragment_recover_account"
             tools:layout="@layout/fragment_recover_account" />
 
@@ -62,7 +62,7 @@
 
     <fragment
         android:id="@+id/homeFragment"
-        android:name="com.example.exercicio4.ui.HomeFragment"
+        android:name="com.example.pipa.ui.HomeFragment"
         android:label="fragment_home"
         tools:layout="@layout/fragment_home">
 
@@ -79,13 +79,13 @@
 
     <fragment
         android:id="@+id/formTaskFragment"
-        android:name="com.example.exercicio4.ui.FormTaskFragment"
+        android:name="com.example.pipa.ui.FormTaskFragment"
         android:label="fragment_form_task"
         tools:layout="@layout/fragment_form_task">
 
         <argument
             android:name="task"
-            app:argType="com.example.exercicio4.data.model.Task"
+            app:argType="com.example.pipa.data.model.Task"
             app:nullable="true" />
     </fragment>
 </navigation>

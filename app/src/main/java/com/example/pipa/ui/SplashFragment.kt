@@ -1,4 +1,4 @@
-package com.example.exercicio4.ui
+package com.example.pipa.ui
 
 import android.os.Bundle
 import android.os.Looper
@@ -7,12 +7,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.os.postDelayed
 import androidx.navigation.fragment.findNavController
-import com.example.exercicio4.R
-import com.example.exercicio4.databinding.FragmentSplashBinding
+import com.example.pipa.R
+import com.example.pipa.databinding.FragmentSplashBinding
 import com.google.firebase.auth.FirebaseAuth
-import java.util.logging.Handler
 
 class SplashFragment : Fragment() {
 

@@ -1,19 +1,16 @@
-package com.example.exercicio4.ui.auth
+package com.example.pipa.ui.auth
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.navigation.fragment.findNavController
-import com.example.exercicio4.R
-import com.example.exercicio4.databinding.FragmentRegisterBinding
-import com.example.exercicio4.ui.BaseFragment
-import com.example.exercicio4.util.initToolbar
-import com.example.exercicio4.util.showBottomSheet
-import com.google.android.material.internal.ViewUtils.hideKeyboard
+import com.example.pipa.R
+import com.example.pipa.databinding.FragmentRegisterBinding
+import com.example.pipa.ui.BaseFragment
+import com.example.pipa.util.initToolbar
 import com.google.firebase.auth.FirebaseAuth
 
 

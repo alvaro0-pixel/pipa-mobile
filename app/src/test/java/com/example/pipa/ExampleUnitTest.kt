@@ -1,4 +1,4 @@
-package com.example.exercicio4
+package com.example.pipa
 
 import org.junit.Test
 

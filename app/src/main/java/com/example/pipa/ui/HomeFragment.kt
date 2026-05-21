@@ -1,4 +1,4 @@
-package com.example.exercicio4.ui
+package com.example.pipa.ui
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -6,10 +6,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.navigation.fragment.findNavController
-import com.example.exercicio4.R
-import com.example.exercicio4.databinding.FragmentHomeBinding
-import com.example.exercicio4.ui.adapter.ViewPagerAdapter
-import com.example.exercicio4.util.showBottomSheet
+import com.example.pipa.R
+import com.example.pipa.databinding.FragmentHomeBinding
+import com.example.pipa.ui.adapter.ViewPagerAdapter
+import com.example.pipa.util.showBottomSheet
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
 
