@@ -15,8 +15,10 @@ import com.example.exercicio4.data.model.Status
 import com.example.exercicio4.data.model.Task
 import com.example.exercicio4.databinding.FragmentFormTaskBinding
 import com.example.exercicio4.databinding.FragmentLoginBinding
+import com.example.exercicio4.util.FirebaseHelper
 import com.example.exercicio4.util.initToolbar
 import com.example.exercicio4.util.showBottomSheet
+import com.google.android.material.internal.ViewUtils.hideKeyboard
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -24,7 +26,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.database
 import kotlin.getValue
 
-class FormTaskFragment : Fragment() {
+class FormTaskFragment : BaseFragment() {
     private var _binding:  FragmentFormTaskBinding? = null
     private val binding get() = _binding!!
 
@@ -95,14 +97,14 @@ class FormTaskFragment : Fragment() {
         binding.buttonSave.setOnClickListener {
             validateData()
         }
-        
-        // Evento que monitora a mudança de escolha do radiogroup
-        binding.radioGroup.setOnCheckedChangeListener { _, i -> status =
-        when(id){
-            R.id.rbTodo -> Status.TODO
-            R.id.rbDoing -> Status.DOING
-            else -> Status.DONE
-        }
+
+        binding.radioGroup.setOnCheckedChangeListener { _, checkedId ->
+            status = when (checkedId) {
+                R.id.rbTodo -> Status.TODO
+                R.id.rbDoing -> Status.DOING
+                R.id.rbDone -> Status.DONE
+                else -> Status.TODO
+            }
         }
     }
 
@@ -110,13 +112,11 @@ class FormTaskFragment : Fragment() {
         val description = binding.editTextDescricao.text.toString().trim()
 
         if (description.isNotBlank()) {
+            hideKeyboard()
             binding.progressBar.isVisible = true
 
 
-            if(newTask) {
-                task = Task()
-                task.id = reference.database.reference.push().key ?: ""
-            }
+            if(newTask) task = Task()
             task.description = description
             task.status = status
 
@@ -127,11 +127,19 @@ class FormTaskFragment : Fragment() {
     }
 
     private fun saveTask() {
-        reference
+        val userId = FirebaseHelper.getIdUser()
+        if (userId == null) {
+            showBottomSheet(message= getString(R.string.error_generic))
+        }
+        binding.progressBar.isVisible = true
+        FirebaseHelper.getDatabase()
             .child("task")
-            .child(auth.currentUser?.uid ?: "")
+            .child(userId)
             .child(task.id)
-            .setValue(task).addOnCompleteListener { result ->
+            .setValue(task)
+            .addOnCompleteListener{ result ->
+                binding.progressBar.isVisible = false
+
                 if (result.isSuccessful) {
                     Toast.makeText(
                         requireContext(),

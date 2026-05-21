@@ -10,12 +10,14 @@ import androidx.core.view.isVisible
 import androidx.navigation.fragment.findNavController
 import com.example.exercicio4.R
 import com.example.exercicio4.databinding.FragmentRegisterBinding
+import com.example.exercicio4.ui.BaseFragment
 import com.example.exercicio4.util.initToolbar
 import com.example.exercicio4.util.showBottomSheet
+import com.google.android.material.internal.ViewUtils.hideKeyboard
 import com.google.firebase.auth.FirebaseAuth
 
 
-class RegisterFragment : Fragment() {
+class RegisterFragment : BaseFragment() {
 
     private var _binding: FragmentRegisterBinding? = null
     private val binding get() = _binding!!
@@ -45,6 +47,7 @@ class RegisterFragment : Fragment() {
         val senha = binding.editextSenha.text.toString().trim()
         if (email.isNotBlank()) {
             if (senha.isNotBlank()) {
+                hideKeyboard()
                 binding.progressBar.isVisible = true
                 registerUser(email, senha)
             } else {

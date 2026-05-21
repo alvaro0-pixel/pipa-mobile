@@ -3,35 +3,31 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_graph"
-    app:startDestination="@id/splashFragment"
-    >
+    app:startDestination="@id/splashFragment">
 
     <fragment
         android:id="@+id/splashFragment"
         android:name="com.example.exercicio4.ui.SplashFragment"
         android:label="fragment_splash"
-        tools:layout="@layout/fragment_splash" >
+        tools:layout="@layout/fragment_splash">
+
         <action
             android:id="@+id/action_splashFragment_to_autentication"
             app:destination="@id/autentication"
-            app:popUpTo="@id/loginFragment"
-            app:popUpToInclusive="true"
-            />
-        <action
-            android:id="@+id/action_splashFragment_to_home"
-            app:destination="@id/home"
-            app:popUpTo="@id/homeFragment"
-            app:popUpToInclusive="true"
-            />
+            app:popUpTo="@id/splashFragment"
+            app:popUpToInclusive="true" />
+
         <action
             android:id="@+id/action_splashFragment_to_homeFragment"
             app:destination="@id/homeFragment"
             app:popUpTo="@id/splashFragment"
-            app:popUpToInclusive="true"
-            />
+            app:popUpToInclusive="true" />
     </fragment>
-    <navigation android:id="@+id/autentication"
+
+    <navigation
+        android:id="@+id/autentication"
         app:startDestination="@id/loginFragment">
+
         <fragment
             android:id="@+id/loginFragment"
             android:name="com.example.exercicio4.ui.auth.LoginFragment"
@@ -43,47 +39,50 @@
             <action
                 android:id="@+id/action_loginFragment_to_recoverAccountFragment"
                 app:destination="@id/recoverAccountFragment" />
-            <action
-                android:id="@+id/action_loginFragment_to_registerFragment2"
-                app:destination="@id/registerFragment" />
         </fragment>
+
         <fragment
             android:id="@+id/registerFragment"
             android:name="com.example.exercicio4.ui.auth.RegisterFragment"
             android:label="fragment_register"
             tools:layout="@layout/fragment_register" />
+
         <fragment
             android:id="@+id/recoverAccountFragment"
             android:name="com.example.exercicio4.ui.auth.RecoverAccountFragment"
             android:label="fragment_recover_account"
             tools:layout="@layout/fragment_recover_account" />
+
         <action
             android:id="@+id/action_global_homeFragment"
             app:destination="@id/homeFragment"
-            app:popUpTo="@id/loginFragment"
-            app:popUpToInclusive="true"
-            />
+            app:popUpTo="@id/autentication"
+            app:popUpToInclusive="true" />
     </navigation>
+
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.example.exercicio4.ui.HomeFragment"
         android:label="fragment_home"
-        tools:layout="@layout/fragment_home" >
+        tools:layout="@layout/fragment_home">
+
         <action
             android:id="@+id/action_homeFragment_to_formTaskFragment"
             app:destination="@id/formTaskFragment" />
+
         <action
             android:id="@+id/action_homeFragment_to_autentication"
             app:destination="@id/autentication"
             app:popUpTo="@id/homeFragment"
-            app:popUpToInclusive="true"
-            />
+            app:popUpToInclusive="true" />
     </fragment>
+
     <fragment
         android:id="@+id/formTaskFragment"
         android:name="com.example.exercicio4.ui.FormTaskFragment"
         android:label="fragment_form_task"
-        tools:layout="@layout/fragment_form_task" >
+        tools:layout="@layout/fragment_form_task">
+
         <argument
             android:name="task"
             app:argType="com.example.exercicio4.data.model.Task"

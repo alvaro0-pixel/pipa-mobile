@@ -17,6 +17,7 @@ import com.example.exercicio4.data.model.Status
 import com.example.exercicio4.data.model.Task
 import com.example.exercicio4.databinding.FragmentTodoBinding
 import com.example.exercicio4.ui.adapter.TaskAdapter
+import com.example.exercicio4.util.FirebaseHelper
 import com.example.exercicio4.util.showBottomSheet
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -63,7 +64,7 @@ class TodoFragment : Fragment() {
     private fun initListeners() {
         binding.floatingActionButton2.setOnClickListener {
             val action = HomeFragmentDirections.actionHomeFragmentToFormTaskFragment(null)
-            findNavController().navigate((R.id.action_homeFragment_to_formTaskFragment))
+            findNavController().navigate(action)
         }
 
         observerViewModel()
@@ -72,23 +73,16 @@ class TodoFragment : Fragment() {
     private fun observerViewModel() {
         viewModel.taskUpdate.observe(viewLifecycleOwner) { updateTask ->
             if (updateTask.status == Status.TODO) {
-
-                // Armazena a lista atual do adaptador
-                val oldList = taskAdapter.currentList
-
-                // Gera uma nova lista a partir da lista antiga já com a tarefa atualizada
-                val newList = oldList.toMutableList().apply {
-                    find { it.id == updateTask.id }?.description = updateTask.description
+                // Verificar se o adapter está inicializado
+                if (::taskAdapter.isInitialized) {
+                    val oldList = taskAdapter.currentList
+                    val newList = oldList.toMutableList().apply {
+                        find { it.id == updateTask.id }?.description = updateTask.description
+                    }
+                    val position = newList.indexOfFirst { it.id == updateTask.id }
+                    taskAdapter.submitList(newList)
+                    taskAdapter.notifyItemChanged(position)
                 }
-
-                // Armazena a posição da tarefa a ser atualizada na lista
-                val position = newList.indexOfFirst { it.id == updateTask.id }
-
-                // Envia a lista atualizada para o adapter
-                taskAdapter.submitList(newList)
-
-                // Atualiza a tarefa pela posição do adapter
-                taskAdapter.notifyItemChanged(position)
             }
         }
     }
@@ -130,9 +124,9 @@ class TodoFragment : Fragment() {
     }
 
     private fun getTask() {
-        reference
+        FirebaseHelper.getDatabase()
             .child("task")
-            .child(auth.currentUser?.uid ?: "")
+            .child(FirebaseHelper.getIdUser())
             .addValueEventListener(object: ValueEventListener {
                 override fun onDataChange(p0: DataSnapshot) {
                     val taskList = mutableListOf<Task>()
@@ -156,9 +150,9 @@ class TodoFragment : Fragment() {
     }
 
     private fun deleteTask(task: Task) {
-        reference
+        FirebaseHelper.getDatabase()
             .child("task")
-            .child(auth.currentUser?.uid ?: "")
+            .child(FirebaseHelper.getIdUser())
             .child(task.id)
             .removeValue().addOnCompleteListener { result ->
                 if(result.isSuccessful){

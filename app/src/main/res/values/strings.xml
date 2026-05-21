@@ -34,7 +34,7 @@
     <string name="text_info_recover_account_fragment">Informe seu email de cadastro para receber \n um link para alteração de senha.</string>
     <string name="text_title_toolbar_recover_account_fragment">Recuperar conta</string>
     <string name="text_button_recover_account_fragment">Enviar</string>
-    <string name="text_message_recover_account_fragment">Conta recuperada</string>
+    <string name="text_message_recover_account_fragment">Em e-mail foi enviado para sua caixa de entrada com o link de recuperação.</string>
 
     <!-- Home fragment -->
 

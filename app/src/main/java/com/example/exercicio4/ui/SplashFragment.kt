@@ -43,10 +43,10 @@ class SplashFragment : Fragment() {
             val currentUser = auth.currentUser
 
             if (currentUser != null) {
-                //home
-                findNavController().navigate(R.id.action_splashFragment_to_home)
+                // Usar o ID correto da ação
+                findNavController().navigate(R.id.action_splashFragment_to_homeFragment)
             } else {
-                //login
+                // login
                 findNavController().navigate(R.id.action_splashFragment_to_autentication)
             }
         } catch (e: Exception) {

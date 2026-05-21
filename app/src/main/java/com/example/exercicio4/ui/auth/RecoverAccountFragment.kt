@@ -9,13 +9,15 @@ import android.widget.Toast
 import androidx.core.view.isVisible
 import com.example.exercicio4.R
 import com.example.exercicio4.databinding.FragmentRecoverAccountBinding
+import com.example.exercicio4.ui.BaseFragment
 import com.example.exercicio4.util.FirebaseHelper
 import com.example.exercicio4.util.initToolbar
 import com.example.exercicio4.util.showBottomSheet
+import com.google.android.material.internal.ViewUtils.hideKeyboard
 import com.google.firebase.auth.FirebaseAuth
 
 
-class RecoverAccountFragment : Fragment() {
+class RecoverAccountFragment : BaseFragment() {
     private var _binding: FragmentRecoverAccountBinding? = null
     private val binding get() = _binding!!
 
@@ -49,6 +51,8 @@ class RecoverAccountFragment : Fragment() {
         val email = binding.editextEmail.text.toString().trim()
 
         if (email.isNotBlank()) {
+            hideKeyboard()
+            binding.progressBar.isVisible=true
             Toast.makeText(requireContext(), "Tudo OK!", Toast.LENGTH_SHORT).show()
         } else {
             showBottomSheet(message = getString(R.string.email_empty))
