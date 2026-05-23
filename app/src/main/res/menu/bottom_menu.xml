@@ -6,20 +6,20 @@
 
     <item android:id="@+id/bottom_home"
         android:title="Início"
-        android:icon="@drawable/ic_logo"/>
+        android:icon="@drawable/ic_home"/>
 
     <item
-        android:id="@+id/bottom_profile"
+        android:id="@+id/bottom_class"
         android:title="Salas"
-        android:icon="@drawable/ic_logo"/>
+        android:icon="@drawable/ic_classes"/>
 
     <item
-        android:id="@+id/bottom_cart"
+        android:id="@+id/bottom_card"
         android:title="Pipa ID"
-        android:icon="@drawable/ic_logo"/>
+        android:icon="@drawable/ic_card"/>
 
     <item android:id="@+id/bottom_calendar"
         android:title="Agendamento"
-        android:icon="@drawable/ic_logo"/>
+        android:icon="@drawable/ic_calendar"/>
 
 </menu>

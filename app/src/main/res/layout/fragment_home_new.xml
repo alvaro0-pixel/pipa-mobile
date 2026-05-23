@@ -18,7 +18,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/white"
-            app:navigationIcon="@drawable/ic_pipa_blk"
+            app:navigationIcon="@drawable/ic_menu"
             android:elevation="4dp"
             android:theme="@style/ThemeOverlay.AppCompat.Light">
 
@@ -30,14 +30,17 @@
                 android:fontFamily="sans-serif-black"
                 android:paddingTop="0dp"
                 android:textColor="@color/black"
-                android:layout_gravity="left|center_vertical"/>
+                android:layout_gravity="start|center_vertical"/>
         </com.google.android.material.appbar.MaterialToolbar>
 
         <FrameLayout
             android:id="@+id/fragment_container"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="?attr/actionBarSize"/>
+            android:layout_marginTop="?attr/actionBarSize"
+            android:layout_margin="0dp"
+            android:background="@color/color_default"
+            />
 
         <com.google.android.material.bottomappbar.BottomAppBar
             android:id="@+id/bottomAppbar"
@@ -70,5 +73,13 @@
         </com.google.android.material.bottomappbar.BottomAppBar>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        app:headerLayout="@layout/nav_header"
+        app:menu="@menu/menu_drawer" />
 
 </androidx.drawerlayout.widget.DrawerLayout>
