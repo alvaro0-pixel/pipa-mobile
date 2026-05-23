@@ -64,7 +64,7 @@
             app:backgroundTint="@null"
             android:layout_marginTop="16dp"
             android:background="@drawable/bg_btn"
-            android:id="@+id/buttonRegister"
+            android:id="@+id/buttonLogin"
             />
 
         <LinearLayout

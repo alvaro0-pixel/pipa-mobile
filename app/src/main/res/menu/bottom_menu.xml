@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <item android:id="@+id/bottom_home"
+        android:title="Início"
+        android:icon="@drawable/ic_logo"/>
+
+    <item
+        android:id="@+id/bottom_profile"
+        android:title="Salas"
+        android:icon="@drawable/ic_logo"/>
+
+    <item
+        android:id="@+id/bottom_cart"
+        android:title="Pipa ID"
+        android:icon="@drawable/ic_logo"/>
+
+    <item android:id="@+id/bottom_calendar"
+        android:title="Agendamento"
+        android:icon="@drawable/ic_logo"/>
+
+</menu>
