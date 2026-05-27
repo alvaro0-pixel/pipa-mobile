@@ -7,6 +7,9 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.pipa.R
@@ -41,7 +44,6 @@ class MainMenuFragment : Fragment() {
 
         // Configurar NavigationView do drawer
         val navigationView = binding.drawerLayout.findViewById<NavigationView>(R.id.nav_view)
-        // Se você não tiver um NavigationView no test.xml, precisará adicionar. Veja observação abaixo.
         navigationView?.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.nav_logout -> {
@@ -75,9 +77,10 @@ class MainMenuFragment : Fragment() {
             }
         }
 
-        // Configurar FAB
-        binding.fab.setOnClickListener {
-            Toast.makeText(requireContext(), "Ação do FAB", Toast.LENGTH_SHORT).show()
+        ViewCompat.setOnApplyWindowInsetsListener(binding.bottomAppbar) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.updatePadding(bottom = systemBars.bottom)
+            insets
         }
     }
 

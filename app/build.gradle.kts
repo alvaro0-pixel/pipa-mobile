@@ -11,7 +11,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.exercicio4"
+        applicationId = "com.example.pipa"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

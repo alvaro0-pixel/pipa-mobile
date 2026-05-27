@@ -6,42 +6,48 @@
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/color_default"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity"
+
+    >
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
+        <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="@color/white"
-            app:navigationIcon="@drawable/ic_menu"
-            android:elevation="4dp"
-            android:theme="@style/ThemeOverlay.AppCompat.Light">
+            android:layout_height="wrap_content">
 
-            <TextView
-                android:id="@+id/Novatarefa"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Pipa"
-                android:fontFamily="sans-serif-black"
-                android:paddingTop="0dp"
-                android:textColor="@color/black"
-                android:layout_gravity="start|center_vertical"/>
-        </com.google.android.material.appbar.MaterialToolbar>
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="@color/white"
+                app:navigationIcon="@drawable/ic_menu"
+                android:elevation="4dp"
+                >
 
+                <TextView
+                    android:id="@+id/Novatarefa"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pipa"
+                    android:fontFamily="sans-serif-black"
+                    android:textColor="@color/black"
+                    android:layout_gravity="start|center_vertical"/>
+
+            </com.google.android.material.appbar.MaterialToolbar>
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <!-- Conteúdo principal — se ancora abaixo da toolbar e acima da bottom bar -->
         <FrameLayout
             android:id="@+id/fragment_container"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="?attr/actionBarSize"
-            android:layout_margin="0dp"
             android:background="@color/color_default"
-            />
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
 
+        <!-- BottomAppBar como filho direto do CoordinatorLayout -->
         <com.google.android.material.bottomappbar.BottomAppBar
             android:id="@+id/bottomAppbar"
             android:layout_width="match_parent"
@@ -59,27 +65,20 @@
                 android:layout_height="wrap_content"
                 android:background="@android:color/transparent"
                 app:labelVisibilityMode="labeled"
-                app:menu="@menu/bottom_menu" />
-
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/fab"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:backgroundTint="@color/white"
-                android:contentDescription="Adicionar"
-                app:layout_anchor="@id/bottomAppbar"
-                app:maxImageSize="40dp" />
+                app:menu="@menu/bottom_menu"/>
 
         </com.google.android.material.bottomappbar.BottomAppBar>
+
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav_view"
-        android:layout_width="wrap_content"
+        android:layout_width="280dp"
         android:layout_height="match_parent"
+        android:fitsSystemWindows="true"
         android:layout_gravity="start"
         app:headerLayout="@layout/nav_header"
-        app:menu="@menu/menu_drawer" />
+        app:menu="@menu/menu_drawer"/>
 
 </androidx.drawerlayout.widget.DrawerLayout>
