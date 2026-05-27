@@ -10,13 +10,11 @@
         android:name="com.example.pipa.ui.SplashFragment"
         android:label="fragment_splash"
         tools:layout="@layout/fragment_splash">
-
         <action
             android:id="@+id/action_splashFragment_to_autentication"
             app:destination="@id/autentication"
             app:popUpTo="@id/splashFragment"
             app:popUpToInclusive="true" />
-
         <action
             android:id="@+id/action_splashFragment_to_homeFragment"
             app:destination="@id/homeFragment"
@@ -27,7 +25,6 @@
     <navigation
         android:id="@+id/autentication"
         app:startDestination="@id/loginFragment">
-
         <fragment
             android:id="@+id/loginFragment"
             android:name="com.example.pipa.ui.auth.LoginFragment"
@@ -40,19 +37,16 @@
                 android:id="@+id/action_loginFragment_to_recoverAccountFragment"
                 app:destination="@id/recoverAccountFragment" />
         </fragment>
-
         <fragment
             android:id="@+id/registerFragment"
             android:name="com.example.pipa.ui.auth.RegisterFragment"
             android:label="fragment_register"
             tools:layout="@layout/fragment_register" />
-
         <fragment
             android:id="@+id/recoverAccountFragment"
             android:name="com.example.pipa.ui.auth.RecoverAccountFragment"
             android:label="fragment_recover_account"
             tools:layout="@layout/fragment_recover_account" />
-
         <action
             android:id="@+id/action_global_homeFragment"
             app:destination="@id/homeFragment"
@@ -60,32 +54,17 @@
             app:popUpToInclusive="true" />
     </navigation>
 
+    <!-- NOVO FRAGMENT PRINCIPAL -->
     <fragment
         android:id="@+id/homeFragment"
-        android:name="com.example.pipa.ui.HomeFragment"
-        android:label="fragment_home"
-        tools:layout="@layout/fragment_home">
-
-        <action
-            android:id="@+id/action_homeFragment_to_formTaskFragment"
-            app:destination="@id/formTaskFragment" />
+        android:name="com.example.pipa.ui.MainMenuFragment"
+        android:label="fragment_main_menu"
+        tools:layout="@layout/fragment_home_new">
 
         <action
             android:id="@+id/action_homeFragment_to_autentication"
             app:destination="@id/autentication"
-            app:popUpTo="@id/homeFragment"
+            app:popUpTo="@id/autentication"
             app:popUpToInclusive="true" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/formTaskFragment"
-        android:name="com.example.pipa.ui.FormTaskFragment"
-        android:label="fragment_form_task"
-        tools:layout="@layout/fragment_form_task">
-
-        <argument
-            android:name="task"
-            app:argType="com.example.pipa.data.model.Task"
-            app:nullable="true" />
     </fragment>
 </navigation>

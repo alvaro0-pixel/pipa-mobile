@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "839678176121",
-    "project_id": "taskapp-23124",
-    "storage_bucket": "taskapp-23124.firebasestorage.app"
+    "project_number": "63441751370",
+    "project_id": "pipa-35e1f",
+    "storage_bucket": "pipa-35e1f.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:839678176121:android:2692e13b7c0e70b767dda8",
+        "mobilesdk_app_id": "1:63441751370:android:fa6ec6c19f8cb06212c5b3",
         "android_client_info": {
-          "package_name": "com.example.exercicio4"
+          "package_name": "com.example.pipa"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyB0V8cGA1sBPUTeKeovV9hwhEl6NTcbiqA"
+          "current_key": "AIzaSyCe7h9bHzjOVuQCi6RDobGtIe-GZ8jHoGA"
         }
       ],
       "services": {
