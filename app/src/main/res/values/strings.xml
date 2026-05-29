@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Task</string>
+    <string name="app_name">Pipa</string>
 
     <!-- Firebase Authentication Errors -->
     <string name="account_not_registered_register_fragment">No account found with this email</string>

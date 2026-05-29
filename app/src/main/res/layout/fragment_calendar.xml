@@ -4,9 +4,13 @@
     android:layout_height="match_parent"
     android:padding="8dp">
 
+
     <CalendarView
         android:id="@+id/calendar_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+
+        />
 
 </FrameLayout>

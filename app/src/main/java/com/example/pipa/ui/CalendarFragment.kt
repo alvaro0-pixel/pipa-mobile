@@ -22,7 +22,7 @@ class CalendarFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val calendarView = view.findViewById<CalendarView>(R.id.calendar_view)
         calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
-            // Você pode implementar ação ao clicar em um dia, se desejar
+            // pode implementar ação ao clicar em um dia, se desejar
         }
     }
 }
