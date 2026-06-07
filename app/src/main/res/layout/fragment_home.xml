@@ -1,55 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".ui.HomeFragment"
-    android:orientation="vertical">
+    android:padding="16dp"
+    android:backgroundTint="@color/color_default"
+    >
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/tv_welcome"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="30dp"/>
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_gravity="center" />
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/ConstraintLayout1"
-        android:background="@color/color_default"> <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabs"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="@color/color_default"
-        app:tabTextAppearance="@style/CustomTabLayout"
-        app:tabIndicatorColor="@color/white"
-        app:tabSelectedTextColor="@color/white"
-        app:tabMode="fixed"
-        app:tabGravity="fill"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btnLogout"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-        <ImageButton
-            android:id="@+id/btnLogout"
-            android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Logout"
-            android:padding="16dp"
-            android:src="@drawable/ic_logout"
-            app:tint="@color/white"
-            app:layout_constraintBottom_toBottomOf="@+id/tabs"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/tabs" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <androidx.viewpager2.widget.ViewPager2
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/viewPager"
-        />
-
-</LinearLayout>
+</FrameLayout>

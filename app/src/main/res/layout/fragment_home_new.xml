@@ -27,15 +27,6 @@
                 android:elevation="4dp"
                 >
 
-                <TextView
-                    android:id="@+id/Novatarefa"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Pipa"
-                    android:fontFamily="sans-serif-black"
-                    android:textColor="@color/black"
-                    android:layout_gravity="start|center_vertical"/>
-
             </com.google.android.material.appbar.MaterialToolbar>
         </com.google.android.material.appbar.AppBarLayout>
 
@@ -60,7 +51,7 @@
             app:fabAnchorMode="cradle">
 
             <com.google.android.material.bottomnavigation.BottomNavigationView
-                android:id="@+id/bottom_navigation"
+                android:id="@+id/bottomNavigation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@android:color/transparent"
