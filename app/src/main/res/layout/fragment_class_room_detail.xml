@@ -13,8 +13,7 @@
         android:orientation="horizontal"
         android:padding="16dp"
         android:gravity="center_vertical"
-        android:layout_marginTop="28dp"
-        >
+        android:layout_marginTop="28dp">
 
         <ImageButton
             android:id="@+id/btn_back"
@@ -35,7 +34,6 @@
             android:textColor="@color/white"
             android:gravity="center" />
 
-        <!-- Espaço vazio para equilibrar (opcional) -->
         <View android:layout_width="48dp" android:layout_height="48dp" />
 
     </LinearLayout>
@@ -59,6 +57,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Card com informações da sala -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -93,6 +92,7 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Calendário visual -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -101,6 +101,25 @@
                 android:textStyle="bold"
                 android:textColor="@color/white"
                 android:layout_marginBottom="12dp" />
+
+            <CalendarView
+                android:id="@+id/calendar_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:firstDayOfWeek="1"
+                android:dateTextAppearance="@style/CalendarDateText"
+                android:weekDayTextAppearance="@style/CalendarWeekDayText" />
+
+            <!-- Lista de eventos do dia selecionado -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Eventos do dia"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:layout_marginBottom="8dp" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_events"

@@ -35,4 +35,16 @@
     <style name="BottomSheetDialog" parent="Theme.Design.Light.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/bottomSheetDialogWrapper</item>
     </style>
+    <style name="CalendarTheme" parent="Theme.AppCompat.Light">
+        <item name="android:dateTextAppearance">@style/CalendarDateText</item>
+        <item name="android:weekDayTextAppearance">@style/CalendarWeekDayText</item>
+    </style>
+
+    <style name="CalendarDateText" parent="android:TextAppearance.Material">
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="CalendarWeekDayText" parent="android:TextAppearance.Material">
+        <item name="android:textColor">@color/white</item>
+    </style>
 </resources>

@@ -30,6 +30,7 @@ android {
         }
     }
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -50,9 +51,8 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
     implementation("com.google.android.material:material:1.11.0")
-
     implementation(platform("com.google.firebase:firebase-bom:34.1.0"))
     implementation("com.google.firebase:firebase-auth:24.1.0")
     implementation("com.google.firebase:firebase-database-ktx:21.0.0")
