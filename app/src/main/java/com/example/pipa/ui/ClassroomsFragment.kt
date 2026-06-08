@@ -1,3 +1,4 @@
+// ClassroomsFragment.kt
 package com.example.pipa.ui
 
 import android.os.Bundle
@@ -9,11 +10,12 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.findNavController
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.pipa.R
 import com.example.pipa.util.FirebaseHelper
-import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -40,23 +42,20 @@ class ClassroomsFragment : Fragment() {
         progressBar = view.findViewById(R.id.progress_classrooms)
 
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        adapter = ClassroomAdapter(classroomList)
+        adapter = ClassroomAdapter(classroomList) { classroomId ->
+            val action = MainMenuFragmentDirections.actionHomeFragmentToClassroomDetailFragment(classroomId)
+            requireParentFragment().findNavController().navigate(action)
+        }
         recyclerView.adapter = adapter
 
         loadClassrooms()
     }
 
     private fun loadClassrooms() {
-        val currentUser = FirebaseHelper.getAuth().currentUser
-        if (currentUser == null) {
-            Log.e(TAG, "Usuário não autenticado")
-            return
-        }
-
+        val currentUser = FirebaseHelper.getAuth().currentUser ?: return
         progressBar.visibility = View.VISIBLE
         classroomList.clear()
 
-        // Usar corrotinas para código assíncrono mais limpo
         lifecycleScope.launch {
             try {
                 val classroomIds = fetchClassroomIds(currentUser.uid)
@@ -71,24 +70,12 @@ class ClassroomsFragment : Fragment() {
                     if (!classroomDoc.exists()) continue
 
                     val name = classroomDoc.getString("curricular-unit") ?: "Sem nome"
-                    val teacherRef = classroomDoc.get("tenured-teacher")
-                    var teacherName = "Professor não informado"
+                    val teacherId = getTeacherId(classroomDoc)
+                    val teacherName = if (teacherId != null) getTeacherName(teacherId) else "Professor não informado"
 
-                    when (teacherRef) {
-                        is String -> {
-                            if (teacherRef.isNotEmpty()) {
-                                teacherName = getTeacherName(teacherRef)
-                            }
-                        }
-                        is DocumentReference -> {
-                            teacherName = getTeacherName(teacherRef.id)
-                        }
-                    }
-
-                    items.add(ClassroomItem(name, teacherName))
+                    items.add(ClassroomItem(classId, name, teacherName))
                 }
 
-                // Atualiza UI na main thread
                 if (isAdded) {
                     classroomList.addAll(items)
                     adapter.notifyDataSetChanged()
@@ -96,59 +83,53 @@ class ClassroomsFragment : Fragment() {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Erro ao carregar turmas", e)
-                if (isAdded) {
-                    progressBar.visibility = View.GONE
-                    // Opcional: mostrar Toast
-                }
+                if (isAdded) progressBar.visibility = View.GONE
             }
         }
     }
 
     /**
-     * Busca os IDs das turmas do usuário.
-     * Primeiro tenta o campo direto "classrooms" no documento do usuário.
-     * Se não existir, busca na subcoleção "enrollments".
+     * Obtém os IDs das turmas do usuário.
+     * Prioridade:
+     * 1. Campo direto "classrooms" no documento do usuário.
+     * 2. Subcoleção "enrollments" dentro do documento do usuário.
+     * 3. Coleção global "Enrollments" filtrando por userId.
      */
     private suspend fun fetchClassroomIds(userId: String): List<String> {
         val userDoc = db.collection("Users").document(userId).get().await()
 
-        // 1. Tentar campo "classrooms" (array de strings)
+        // Tentativa 1: campo "classrooms" (array de strings)
         val classroomsField = userDoc.get("classrooms") as? List<*>
         if (!classroomsField.isNullOrEmpty()) {
             return classroomsField.filterIsInstance<String>()
         }
 
-        // 2. Buscar subcoleção "enrollments" (ou "classrooms")
+        // Tentativa 2: subcoleção "enrollments" dentro de Users/{userId}
         val enrollmentsSnapshot = db.collection("Users")
             .document(userId)
             .collection("enrollments")
             .get()
             .await()
+        val idsFromSub = enrollmentsSnapshot.documents.mapNotNull { it.getString("classroomId") }
+        if (idsFromSub.isNotEmpty()) return idsFromSub
 
-        val idsFromSubcollection = mutableListOf<String>()
-        for (doc in enrollmentsSnapshot.documents) {
-            val classId = doc.getString("classroomId")
-            if (!classId.isNullOrEmpty()) {
-                idsFromSubcollection.add(classId)
-            }
-        }
-
-        if (idsFromSubcollection.isNotEmpty()) {
-            return idsFromSubcollection
-        }
-
-        // 3. Fallback: tentar coleção global "Enrollments" (userId -> classroomId)
+        // Tentativa 3: coleção global "Enrollments"
         val globalEnrollments = db.collection("Enrollments")
             .whereEqualTo("userId", userId)
             .get()
             .await()
-
         return globalEnrollments.documents.mapNotNull { it.getString("classroomId") }
     }
 
-    /**
-     * Obtém o nome completo do professor a partir do ID do usuário.
-     */
+    private fun getTeacherId(classroomDoc: com.google.firebase.firestore.DocumentSnapshot): String? {
+        val field = classroomDoc.get("tenured-teacher")
+        return when (field) {
+            is String -> field
+            is com.google.firebase.firestore.DocumentReference -> field.id
+            else -> null
+        }
+    }
+
     private suspend fun getTeacherName(teacherId: String): String {
         return try {
             val teacherDoc = db.collection("Users").document(teacherId).get().await()
@@ -156,17 +137,15 @@ class ClassroomsFragment : Fragment() {
             val lastName = teacherDoc.getString("lastname") ?: ""
             "$name $lastName".trim().ifEmpty { "Professor não encontrado" }
         } catch (e: Exception) {
-            Log.e(TAG, "Erro ao buscar professor $teacherId", e)
             "Erro ao carregar professor"
         }
     }
 
-    // ==================== ADAPTER ====================
-
-    data class ClassroomItem(val name: String, val teacher: String)
-
-    inner class ClassroomAdapter(private val items: List<ClassroomItem>) :
-        RecyclerView.Adapter<ClassroomAdapter.ViewHolder>() {
+    // Adapter com click listener
+    inner class ClassroomAdapter(
+        private val items: List<ClassroomItem>,
+        private val onItemClick: (String) -> Unit
+    ) : RecyclerView.Adapter<ClassroomAdapter.ViewHolder>() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
             val view = LayoutInflater.from(parent.context)
@@ -176,6 +155,7 @@ class ClassroomsFragment : Fragment() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             holder.bind(items[position])
+            holder.itemView.setOnClickListener { onItemClick(items[position].id) }
         }
 
         override fun getItemCount() = items.size
@@ -190,4 +170,6 @@ class ClassroomsFragment : Fragment() {
             }
         }
     }
+
+    data class ClassroomItem(val id: String, val name: String, val teacher: String)
 }
