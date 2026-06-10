@@ -109,7 +109,9 @@
                 android:layout_marginBottom="16dp"
                 android:firstDayOfWeek="1"
                 android:dateTextAppearance="@style/CalendarDateText"
-                android:weekDayTextAppearance="@style/CalendarWeekDayText" />
+                android:weekDayTextAppearance="@style/CalendarWeekDayText"
+                android:background="@color/white"
+                />
 
             <!-- Lista de eventos do dia selecionado -->
             <TextView
