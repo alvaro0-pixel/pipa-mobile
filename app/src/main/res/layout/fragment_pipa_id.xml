@@ -20,6 +20,35 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
+            <!-- Marca d'água -->
+
+            <ImageView
+                android:id="@+id/iv_watermark"
+                android:layout_width="160dp"
+                android:layout_height="160dp"
+                android:src="@drawable/ic_pipamdg"
+                android:alpha="0.15"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+            <!-- Foto placeholder -->
+
+            <!-- Foto placeholder -->
+
+            <View
+                android:id="@+id/iv_photo"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/ic_bgwhite"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"/>
+
             <!-- Matrícula -->
 
             <TextView
