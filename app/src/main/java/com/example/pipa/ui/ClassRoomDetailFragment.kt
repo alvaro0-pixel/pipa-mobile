@@ -50,7 +50,7 @@ class ClassroomDetailFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_class_room_detail, container, false)
+        return inflater.inflate(R.layout.fragment_classroom_detail, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
