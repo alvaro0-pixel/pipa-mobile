@@ -9,7 +9,6 @@ import android.widget.ImageButton
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -19,16 +18,13 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.kizitonwose.calendar.core.CalendarDay
-import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
 import com.kizitonwose.calendar.view.CalendarView
 import com.kizitonwose.calendar.view.MonthDayBinder
-import com.kizitonwose.calendar.view.MonthHeaderFooterBinder
 import com.kizitonwose.calendar.view.ViewContainer
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -59,15 +55,10 @@ class ClassroomDetailFragment : Fragment() {
     private val eventsByDate = mutableMapOf<LocalDate, MutableList<EventItem>>()
     private lateinit var eventsAdapter: EventsAdapter
 
-    // Formatador ISO para chaves do mapa (yyyy-MM-dd), igual ao banco
     private val isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
     private var selectedDate: LocalDate = LocalDate.now()
     private var currentMonth: YearMonth = YearMonth.now()
-
-    // -------------------------------------------------------------------------
-    // Lifecycle
-    // -------------------------------------------------------------------------
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -105,44 +96,52 @@ class ClassroomDetailFragment : Fragment() {
         loadData()
     }
 
-    // -------------------------------------------------------------------------
-    // Configuração do CalendarView (Kizitonwose)
-    // -------------------------------------------------------------------------
-
     private fun setupCalendar() {
-        // Intervalo: 3 meses para trás, 3 meses para frente
         val startMonth = currentMonth.minusMonths(3)
         val endMonth   = currentMonth.plusMonths(3)
 
         calendarView.setup(startMonth, endMonth, firstDayOfWeekFromLocale())
         calendarView.scrollToMonth(currentMonth)
 
-        // Binder de cada célula de dia
         calendarView.dayBinder = object : MonthDayBinder<DayViewContainer> {
             override fun create(view: View) = DayViewContainer(view)
 
             override fun bind(container: DayViewContainer, data: CalendarDay) {
                 container.tvDay.text = data.date.dayOfMonth.toString()
+                val context = container.view.context
 
-                // Dias de outros meses ficam translúcidos
                 if (data.position != DayPosition.MonthDate) {
                     container.tvDay.alpha = 0.3f
                     container.dot.visibility = View.INVISIBLE
+                    container.view.setBackgroundResource(0)
                     container.view.setOnClickListener(null)
                     return
                 }
 
                 container.tvDay.alpha = 1f
+                val events = eventsByDate[data.date]
 
-                // Destaque do dia selecionado
+                if (!events.isNullOrEmpty()) {
+                    val backgroundRes = when (events[0].status) {
+                        "available" -> R.drawable.bg_event_available
+                        "pending"   -> R.drawable.bg_event_pending
+                        "confirmed" -> R.drawable.bg_event_confirmed
+                        else        -> R.drawable.bg_event_default
+                    }
+                    container.view.setBackgroundResource(backgroundRes)
+                    container.tvDay.setTextColor(context.getColor(R.color.white))
+                } else {
+                    container.view.setBackgroundResource(0)
+                    container.tvDay.setTextColor(context.getColor(R.color.white))
+                }
+
                 if (data.date == selectedDate) {
                     container.tvDay.setBackgroundResource(R.drawable.bg_btn)
-                } else {
+                    container.tvDay.setTextColor(context.getColor(R.color.black))
+                } else if (events.isNullOrEmpty()) {
                     container.tvDay.setBackgroundResource(0)
                 }
 
-                // Dot de status
-                val events = eventsByDate[data.date]
                 if (!events.isNullOrEmpty()) {
                     val dotRes = when (events[0].status) {
                         "available" -> R.drawable.bg_dot_green
@@ -156,19 +155,20 @@ class ClassroomDetailFragment : Fragment() {
                     container.dot.visibility = View.INVISIBLE
                 }
 
-                // Clique no dia
                 container.view.setOnClickListener {
                     val previousDate = selectedDate
                     selectedDate = data.date
-                    // Re-renderiza apenas as duas células afetadas
                     calendarView.notifyDateChanged(previousDate)
                     calendarView.notifyDateChanged(selectedDate)
                     showEventsForDate(selectedDate)
+
+                    if (events.isNullOrEmpty()) {
+                        showModalNonFeaturedDateClick(data.date.format(isoFormatter))
+                    }
                 }
             }
         }
 
-        // Navegação de mês com os botões de seta
         calendarView.monthScrollListener = { month ->
             currentMonth = month.yearMonth
             updateMonthYearTitle(currentMonth)
@@ -189,22 +189,16 @@ class ClassroomDetailFragment : Fragment() {
         updateMonthYearTitle(currentMonth)
     }
 
-    /** Atualiza o TextView com o nome do mês e o ano (ex: "Junho 2025") */
     private fun updateMonthYearTitle(yearMonth: YearMonth) {
         val monthName = yearMonth.month.getDisplayName(TextStyle.FULL, Locale("pt", "BR"))
             .replaceFirstChar { it.uppercase() }
         tvMonthYear.text = "$monthName ${yearMonth.year}"
     }
 
-    // ViewContainer para cada célula do calendário
-    inner class DayViewContainer(val view: View) : ViewContainer(view) {
+    inner class DayViewContainer(view: View) : ViewContainer(view) {
         val tvDay: TextView = view.findViewById(R.id.tv_day_text)
         val dot: View       = view.findViewById(R.id.view_dot)
     }
-
-    // -------------------------------------------------------------------------
-    // Carregamento de dados do Firestore
-    // -------------------------------------------------------------------------
 
     private fun loadData() {
         if (classroomId == null) return
@@ -212,11 +206,9 @@ class ClassroomDetailFragment : Fragment() {
         progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
-                // 1. Papel do usuário logado
                 val userSnapshot = db.collection("Users").document(currentUid).get().await()
                 currentUserRole = userSnapshot.getString("role") ?: "student"
 
-                // 2. Detalhes da turma
                 val classSnapshot = db.collection("Classrooms").document(classroomId!!).get().await()
                 if (classSnapshot.exists()) {
                     curricularUnit = classSnapshot.getString("curricular-unit") ?: "Sem nome"
@@ -230,7 +222,6 @@ class ClassroomDetailFragment : Fragment() {
                     }
                 }
 
-                // 3. Agenda e horários
                 loadCalendarAndEvents()
 
             } catch (e: Exception) {
@@ -241,27 +232,48 @@ class ClassroomDetailFragment : Fragment() {
         }
     }
 
+    // BASEADO DIRETAMENTE EM: get_calendar_data(2).php e format(2).js
     private suspend fun loadCalendarAndEvents() {
         eventsByDate.clear()
 
-        // Eventos reais no Firestore
+        // 1. Obtém a lista oficial de IDs de eventos vinculados ao usuário logado
+        val userSnapshot = db.collection("Users").document(currentUid).get().await()
+        val userCalendarIDs = userSnapshot.get("calendar") as? List<*> ?: emptyList<Any>()
+
+        // 2. Filtra os eventos que pertencem a esta Turma específica
         val eventsSnapshot = db.collection("Events")
             .whereEqualTo("classroom-id", classroomId)
             .get().await()
 
         for (doc in eventsSnapshot.documents) {
-            val dateStr      = doc.getString("date") ?: continue // formato yyyy-MM-dd
-            val status       = doc.getString("status") ?: "pending"
-            val participants = doc.get("participants") as? List<*> ?: emptyList<Any>()
+            val eventId = doc.id
+
+            // Se for visão de Aluno, ele só enxerga eventos cujo ID esteja listado no array "calendar" dele
+            if (currentUserRole == "student" && !userCalendarIDs.contains(eventId)) {
+                continue
+            }
+
+            val dateStr = doc.getString("date") ?: continue
+            val status  = doc.getString("status") ?: "pending"
+
+            val participants  = doc.get("participants") as? List<*> ?: emptyList<Any>()
             val isParticipant = participants.contains(currentUid) || teacherId == currentUid
 
             val localDate = LocalDate.parse(dateStr, isoFormatter)
 
+            // Formatação idêntica ao format_event() do JS
+            val displayStatus = when (status) {
+                "pending"   -> "Pendente"
+                "confirmed" -> "Confirmado"
+                else        -> "Desconhecido"
+            }
+            val eventTitle = "$displayStatus - $teacherName"
+
             val event = EventItem(
-                id            = doc.id,
-                title         = if (status == "confirmed") "Confirmado - $teacherName" else "Pendente - $teacherName",
+                id            = eventId,
+                title         = eventTitle,
                 dateStr       = dateStr,
-                status        = status,
+                status        = status, // Mantém a string original ("pending"/"confirmed") para controle lógico
                 isParticipant = isParticipant,
                 classroom_id  = classroomId ?: ""
             )
@@ -269,7 +281,7 @@ class ClassroomDetailFragment : Fragment() {
             eventsByDate.getOrPut(localDate) { mutableListOf() }.add(event)
         }
 
-        // Para alunos: preencher slots disponíveis com base na availability do professor
+        // 3. Se for Aluno, injeta os dias livres com base na disponibilidade do Professor (set_available_dates)
         if (currentUserRole == "student" && teacherId != null) {
             val teacherSnapshot = db.collection("Users").document(teacherId!!).get().await()
             @Suppress("UNCHECKED_CAST")
@@ -277,19 +289,13 @@ class ClassroomDetailFragment : Fragment() {
             generateAvailableSlots(availability)
         }
 
-        // Re-renderiza o calendário inteiro e atualiza a lista do dia selecionado
         calendarView.notifyCalendarChanged()
         showEventsForDate(selectedDate)
     }
 
-    /**
-     * Igual ao set_available_dates() do format.js:
-     * para cada dia nos próximos 30 dias, se o dia da semana estiver na availability
-     * do professor e ainda não houver evento marcado, adiciona um slot "available".
-     */
     private fun generateAvailableSlots(availability: Map<String, Any>) {
         val weekDaysMap = mapOf(
-            "sunday"    to 7, // java.time: DayOfWeek.SUNDAY = 7
+            "sunday"    to 7, // LocalDate considera Domingo como 7
             "monday"    to 1,
             "tuesday"   to 2,
             "wednesday" to 3,
@@ -301,11 +307,12 @@ class ClassroomDetailFragment : Fragment() {
         val today = LocalDate.now()
         for (i in 0 until 30) {
             val futureDate  = today.plusDays(i.toLong())
-            val dayOfWeek   = futureDate.dayOfWeek.value // 1 (Mon) … 7 (Sun)
+            val dayOfWeek   = futureDate.dayOfWeek.value
             val dateStr     = futureDate.format(isoFormatter)
 
             for ((dayName, _) in availability) {
                 val targetDay = weekDaysMap[dayName.lowercase()] ?: continue
+
                 if (targetDay == dayOfWeek && !eventsByDate.containsKey(futureDate)) {
                     val availableEvent = EventItem(
                         id            = "avail_$dateStr",
@@ -315,15 +322,11 @@ class ClassroomDetailFragment : Fragment() {
                         isParticipant = false,
                         classroom_id  = classroomId ?: ""
                     )
-                    eventsByDate[futureDate] = mutableListOf(availableEvent)
+                    eventsByDate.getOrPut(futureDate) { mutableListOf() }.add(availableEvent)
                 }
             }
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Interação com a lista de eventos
-    // -------------------------------------------------------------------------
 
     private fun showEventsForDate(date: LocalDate) {
         val dayEvents = eventsByDate[date] ?: emptyList()
@@ -331,67 +334,99 @@ class ClassroomDetailFragment : Fragment() {
     }
 
     private fun handleEventClick(event: EventItem) {
-        val formattedDate = formatToPtBr(event.dateStr)
-
         when (event.status) {
             "available" -> {
                 if (currentUserRole == "student") {
-                    AlertDialog.Builder(requireContext())
-                        .setTitle("Agendar Atendimento")
-                        .setMessage("Deseja marcar um agendamento para o dia $formattedDate com o(a) professor(a) $teacherName?")
-                        .setPositiveButton("Agendar") { _, _ -> executeScheduling(event.dateStr) }
-                        .setNegativeButton("Cancelar", null)
-                        .show()
+                    showModalConfirmScheduleEvent(event.dateStr)
                 } else {
                     Toast.makeText(requireContext(), "Este dia está listado como livre para seus alunos.", Toast.LENGTH_SHORT).show()
                 }
             }
-
             "pending" -> {
                 if (currentUserRole == "teacher") {
-                    AlertDialog.Builder(requireContext())
-                        .setTitle("Confirmar Agendamento")
-                        .setMessage("Deseja aprovar ou rejeitar o agendamento de $curricularUnit para o dia $formattedDate?")
-                        .setPositiveButton("Confirmar") { _, _ -> executeConfirmation(event.id) }
-                        .setNegativeButton("Cancelar Agendamento") { _, _ -> executeCancellation(event.id) }
-                        .setNeutralButton("Fechar", null)
-                        .show()
+                    showModalConfirmScheduling(event.id, event.dateStr)
                 } else {
                     if (event.isParticipant) {
-                        AlertDialog.Builder(requireContext())
-                            .setTitle("Agendamento Pendente")
-                            .setMessage("Você solicitou atendimento em $formattedDate. Deseja cancelar a solicitação?")
-                            .setPositiveButton("Sim, Cancelar") { _, _ -> executeCancellation(event.id) }
-                            .setNegativeButton("Não", null)
-                            .show()
+                        showModalConfirmCancelEvent("student", event.id, event.dateStr)
                     } else {
-                        Toast.makeText(requireContext(), "Horário indisponível (reservado por outro aluno).", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Horário ocupado por outro aluno.", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
-
             "confirmed" -> {
                 if (event.isParticipant) {
-                    AlertDialog.Builder(requireContext())
-                        .setTitle("Agendamento Confirmado")
-                        .setMessage("Você tem um compromisso dia $formattedDate.\nDeseja cancelar o agendamento?")
-                        .setPositiveButton("Cancelar Presença") { _, _ -> executeCancellation(event.id) }
-                        .setNegativeButton("Voltar", null)
-                        .show()
+                    showModalConfirmCancelEvent(currentUserRole, event.id, event.dateStr)
                 } else {
                     Toast.makeText(requireContext(), "Horário ocupado.", Toast.LENGTH_SHORT).show()
                 }
             }
+            else -> {
+                showModalNonFeaturedDateClick(event.dateStr)
+            }
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Operações no Firestore (mesma lógica dos .php)
-    // -------------------------------------------------------------------------
+    private fun showModalNonFeaturedDateClick(dateStr: String) {
+        val formattedDate = formatToPtBr(dateStr)
+        AlertDialog.Builder(requireContext())
+            .setTitle("Nada nesta data")
+            .setMessage("Não há agendamentos para o dia $formattedDate.")
+            .setPositiveButton("OK", null)
+            .show()
+    }
 
-    /** Equivalente ao schedule_event.php */
+    private fun showModalConfirmScheduleEvent(dateStr: String) {
+        val formattedDate = formatToPtBr(dateStr)
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Confirmar Agendamento")
+            .setMessage("Tem certeza que deseja agendar um atendimento com o(a) professor(a) $teacherName no dia $formattedDate?")
+            .setPositiveButton("Sim, Agendar") { dialog, _ ->
+                dialog.dismiss()
+                executeScheduling(dateStr)
+            }
+            .setNegativeButton("Não", null)
+            .show()
+    }
+
+    private fun showModalConfirmScheduling(eventId: String, dateStr: String) {
+        val formattedDate = formatToPtBr(dateStr)
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Confirmar Agendamento")
+            .setMessage("Tem certeza que deseja confirmar o agendamento da disciplina de $curricularUnit no dia $formattedDate?")
+            .setPositiveButton("Sim, Confirmar") { dialog, _ ->
+                dialog.dismiss()
+                executeConfirmation(eventId)
+            }
+            .setNegativeButton("Não", null)
+            .show()
+    }
+
+    private fun showModalConfirmCancelEvent(role: String, eventId: String, dateStr: String) {
+        val formattedDate = formatToPtBr(dateStr)
+
+        val message = if (role == "student") {
+            "Tem certeza que deseja cancelar o agendamento com o(a) professor(a) $teacherName da disciplina de $curricularUnit no dia $formattedDate?"
+        } else {
+            "Tem certeza que deseja cancelar o agendamento da disciplina de $curricularUnit no dia $formattedDate?"
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Confirmar Cancelamento")
+            .setMessage(message)
+            .setPositiveButton("Sim, Cancelar") { dialog, _ ->
+                dialog.dismiss()
+                executeCancellation(eventId)
+            }
+            .setNegativeButton("Não", null)
+            .show()
+    }
+
     private fun executeScheduling(dateStr: String) {
+        if (classroomId == null) return
         progressBar.visibility = View.VISIBLE
+
         val newEvent = hashMapOf(
             "classroom-id" to classroomId,
             "date"         to dateStr,
@@ -408,12 +443,17 @@ class ClassroomDetailFragment : Fragment() {
                 db.collection("Users").document(currentUid)
                     .update("calendar", FieldValue.arrayUnion(eventId)).await()
 
-                teacherId?.let { tId ->
-                    db.collection("Users").document(tId)
+                if (!teacherId.isNullOrEmpty()) {
+                    db.collection("Users").document(teacherId!!)
                         .update("calendar", FieldValue.arrayUnion(eventId)).await()
                 }
 
-                Toast.makeText(requireContext(), "Solicitação enviada ao professor!", Toast.LENGTH_SHORT).show()
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Feito!")
+                    .setMessage("Atendimento feito com sucesso, aguarde a confirmação de seu professor.")
+                    .setPositiveButton("OK", null)
+                    .show()
+
                 loadCalendarAndEvents()
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Erro: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -423,13 +463,18 @@ class ClassroomDetailFragment : Fragment() {
         }
     }
 
-    /** Equivalente ao confirm_event.php */
     private fun executeConfirmation(eventId: String) {
         progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
                 db.collection("Events").document(eventId).update("status", "confirmed").await()
-                Toast.makeText(requireContext(), "Agendamento confirmado!", Toast.LENGTH_SHORT).show()
+
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Feito!")
+                    .setMessage("Agendamento confirmado com sucesso.")
+                    .setPositiveButton("OK", null)
+                    .show()
+
                 loadCalendarAndEvents()
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Erro ao confirmar: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -439,15 +484,6 @@ class ClassroomDetailFragment : Fragment() {
         }
     }
 
-    /**
-     * Equivalente ao cancel_event.php.
-     *
-     * Lógica PHP preservada:
-     *   - Aluno:    remove-se dos participants; se não restar mais ninguém, deleta o evento;
-     *               caso contrário apenas atualiza participants. Remove eventId do próprio calendar.
-     *   - Professor: deleta o evento diretamente, sem mexer nos participants individualmente.
-     *               Remove eventId do próprio calendar.
-     */
     private fun executeCancellation(eventId: String) {
         progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
@@ -469,16 +505,18 @@ class ClassroomDetailFragment : Fragment() {
 
                     db.collection("Users").document(currentUid)
                         .update("calendar", FieldValue.arrayRemove(eventId)).await()
-
                 } else {
-                    // Professor: deleta o evento direto
                     db.collection("Events").document(eventId).delete().await()
-
                     db.collection("Users").document(currentUid)
                         .update("calendar", FieldValue.arrayRemove(eventId)).await()
                 }
 
-                Toast.makeText(requireContext(), "Agendamento cancelado com sucesso.", Toast.LENGTH_SHORT).show()
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Feito!")
+                    .setMessage("Agendamento cancelado com sucesso.")
+                    .setPositiveButton("OK", null)
+                    .show()
+
                 loadCalendarAndEvents()
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Erro ao cancelar: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -488,10 +526,6 @@ class ClassroomDetailFragment : Fragment() {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Utilitários
-    // -------------------------------------------------------------------------
-
     private fun formatToPtBr(dateStr: String): String {
         return try {
             val date = LocalDate.parse(dateStr, isoFormatter)
@@ -500,10 +534,6 @@ class ClassroomDetailFragment : Fragment() {
             dateStr
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Modelos de dados e Adapter
-    // -------------------------------------------------------------------------
 
     data class EventItem(
         val id: String,
@@ -532,16 +562,17 @@ class ClassroomDetailFragment : Fragment() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val event = events[position]
             holder.tvTitle.text = event.title
+            val context = holder.itemView.context
 
             if (event.status == "available") {
                 holder.tvDate.text = "Livre para agendamento"
                 holder.itemView.setBackgroundResource(R.drawable.bg_event_available)
-                holder.tvTitle.setTextColor(holder.itemView.context.getColor(R.color.white))
-                holder.tvDate.setTextColor(holder.itemView.context.getColor(R.color.white))
+                holder.tvTitle.setTextColor(context.getColor(R.color.white))
+                holder.tvDate.setTextColor(context.getColor(R.color.white))
             } else {
                 holder.tvDate.text = formatToPtBr(event.dateStr)
-                holder.tvTitle.setTextColor(holder.itemView.context.getColor(R.color.black))
-                holder.tvDate.setTextColor(holder.itemView.context.getColor(R.color.color_default_dark))
+                holder.tvTitle.setTextColor(context.getColor(R.color.black))
+                holder.tvDate.setTextColor(context.getColor(R.color.color_default_dark))
 
                 when (event.status) {
                     "confirmed" -> holder.itemView.setBackgroundResource(R.drawable.bg_event_confirmed)
