@@ -41,10 +41,10 @@
     </style>
 
     <style name="CalendarDateText" parent="android:TextAppearance.Material">
-        <item name="android:textColor">@color/white</item>
+        <item name="android:textColor">@color/black</item>
     </style>
 
     <style name="CalendarWeekDayText" parent="android:TextAppearance.Material">
-        <item name="android:textColor">@color/white</item>
+        <item name="android:textColor">@color/black</item>
     </style>
 </resources>

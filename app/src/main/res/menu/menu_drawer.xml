@@ -3,5 +3,5 @@
     <item
         android:id="@+id/nav_logout"
         android:title="Sair da conta"
-        android:icon="@drawable/ic_logout" /> <!-- crie um ícone ou use ic_pipa_blk -->
+        android:icon="@drawable/ic_logout" />
 </menu>
