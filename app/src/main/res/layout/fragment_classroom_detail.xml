@@ -57,72 +57,144 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Card com informações da sala -->
-            <com.google.android.material.card.MaterialCardView
+            <!-- Informações da turma -->
+            <TextView
+                android:id="@+id/tv_class_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp"
-                app:cardUseCompatPadding="true">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:id="@+id/tv_classroom_name"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="24sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/black"
-                        android:layout_marginBottom="8dp" />
-
-                    <TextView
-                        android:id="@+id/tv_teacher_name"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="18sp"
-                        android:textColor="@color/color_default_dark" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Calendário visual -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Calendário"
-                android:textSize="20sp"
+                android:layout_marginTop="8dp"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@color/white"
-                android:layout_marginBottom="12dp" />
+                android:textColor="@color/white" />
 
-            <CalendarView
+            <TextView
+                android:id="@+id/tv_teacher_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="16dp"
+                android:textSize="14sp"
+                android:textColor="@color/white" />
+
+            <!-- Cabeçalho de navegação de mês -->
+            <LinearLayout
+                android:id="@+id/calendar_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+
+                <ImageButton
+                    android:id="@+id/btn_prev_month"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/icback"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:tint="@color/white"
+                    android:contentDescription="Mês anterior" />
+
+                <TextView
+                    android:id="@+id/tv_month_year"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/white" />
+
+                <ImageButton
+                    android:id="@+id/btn_next_month"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/icforward"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:tint="@color/white"
+                    android:contentDescription="Próximo mês" />
+
+            </LinearLayout>
+
+            <!-- Labels dos dias da semana -->
+            <LinearLayout
+                android:id="@+id/calendar_days_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="7"
+                android:layout_marginBottom="2dp">
+
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:gravity="center"
+                    android:text="Dom" android:textSize="11sp" android:textColor="@color/white" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:gravity="center"
+                    android:text="Seg" android:textSize="11sp" android:textColor="@color/white" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:gravity="center"
+                    android:text="Ter" android:textSize="11sp" android:textColor="@color/white" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:gravity="center"
+                    android:text="Qua" android:textSize="11sp" android:textColor="@color/white" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:gravity="center"
+                    android:text="Qui" android:textSize="11sp" android:textColor="@color/white" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:gravity="center"
+                    android:text="Sex" android:textSize="11sp" android:textColor="@color/white" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:gravity="center"
+                    android:text="Sáb" android:textSize="11sp" android:textColor="@color/white" />
+
+            </LinearLayout>
+
+            <!-- Kizitonwose CalendarView -->
+            <com.kizitonwose.calendar.view.CalendarView
                 android:id="@+id/calendar_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:firstDayOfWeek="1"
-                android:dateTextAppearance="@style/CalendarDateText"
-                android:weekDayTextAppearance="@style/CalendarWeekDayText"
-                android:background="@color/white"
-                />
+                app:cv_dayViewResource="@layout/item_calendar_day"
+                app:cv_monthScrollPaged="true"
+                app:cv_scrollMode="paged" />
+
+            <!-- Legenda dos dots -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp">
+
+                <View
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:background="@drawable/bg_dot_green"
+                    android:layout_marginEnd="4dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Disponível" android:textSize="11sp" android:textColor="@color/white"
+                    android:layout_marginEnd="12dp" />
+
+                <View
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:background="@drawable/bg_dot_orange"
+                    android:layout_marginEnd="4dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Pendente" android:textSize="11sp" android:textColor="@color/white"
+                    android:layout_marginEnd="12dp" />
+
+                <View
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:background="@drawable/bg_dot_blue"
+                    android:layout_marginEnd="4dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Confirmado" android:textSize="11sp" android:textColor="@color/white" />
+
+            </LinearLayout>
 
             <!-- Lista de eventos do dia selecionado -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Eventos do dia"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="@color/white"
-                android:layout_marginBottom="8dp" />
-
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_events"
                 android:layout_width="match_parent"

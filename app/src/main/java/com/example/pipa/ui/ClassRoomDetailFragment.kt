@@ -5,11 +5,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CalendarView
 import android.widget.ImageButton
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -18,9 +18,21 @@ import com.example.pipa.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.kizitonwose.calendar.core.CalendarDay
+import com.kizitonwose.calendar.core.CalendarMonth
+import com.kizitonwose.calendar.core.DayPosition
+import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
+import com.kizitonwose.calendar.view.CalendarView
+import com.kizitonwose.calendar.view.MonthDayBinder
+import com.kizitonwose.calendar.view.MonthHeaderFooterBinder
+import com.kizitonwose.calendar.view.ViewContainer
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import java.util.*
 
 class ClassroomDetailFragment : Fragment() {
@@ -28,6 +40,9 @@ class ClassroomDetailFragment : Fragment() {
     private lateinit var btnBack: ImageButton
     private lateinit var tvClassName: TextView
     private lateinit var tvTeacherName: TextView
+    private lateinit var tvMonthYear: TextView
+    private lateinit var btnPrevMonth: ImageButton
+    private lateinit var btnNextMonth: ImageButton
     private lateinit var calendarView: CalendarView
     private lateinit var rvEvents: RecyclerView
     private lateinit var progressBar: ProgressBar
@@ -38,13 +53,21 @@ class ClassroomDetailFragment : Fragment() {
     private var teacherName: String = "Desconhecido"
     private var curricularUnit: String = "Sem nome"
 
-    // Variáveis do Usuário Atual Logado
-    private var currentUid: String = FirebaseAuth.getInstance().currentUser?.uid ?: "placeholder-uid"
-    private var currentUserRole: String = "student" // Altere dinamicamente para "teacher" de acordo com o login
+    private var currentUid: String = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    private var currentUserRole: String = "student"
 
-    private val eventsByDate = mutableMapOf<String, MutableList<EventItem>>()
+    private val eventsByDate = mutableMapOf<LocalDate, MutableList<EventItem>>()
     private lateinit var eventsAdapter: EventsAdapter
-    private var selectedDateCalendar: Calendar = Calendar.getInstance()
+
+    // Formatador ISO para chaves do mapa (yyyy-MM-dd), igual ao banco
+    private val isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+    private var selectedDate: LocalDate = LocalDate.now()
+    private var currentMonth: YearMonth = YearMonth.now()
+
+    // -------------------------------------------------------------------------
+    // Lifecycle
+    // -------------------------------------------------------------------------
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -56,377 +79,439 @@ class ClassroomDetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        btnBack = view.findViewById(R.id.btn_back)
-        tvClassName = view.findViewById(R.id.tv_classroom_name)
+        classroomId = arguments?.getString("id")
+
+        btnBack       = view.findViewById(R.id.btn_back)
+        tvClassName   = view.findViewById(R.id.tv_class_name)
         tvTeacherName = view.findViewById(R.id.tv_teacher_name)
-        calendarView = view.findViewById(R.id.calendar_view)
-        rvEvents = view.findViewById(R.id.rv_events)
-        progressBar = view.findViewById(R.id.progress_bar)
+        tvMonthYear   = view.findViewById(R.id.tv_month_year)
+        btnPrevMonth  = view.findViewById(R.id.btn_prev_month)
+        btnNextMonth  = view.findViewById(R.id.btn_next_month)
+        calendarView  = view.findViewById(R.id.calendar_view)
+        rvEvents      = view.findViewById(R.id.rv_events)
+        progressBar   = view.findViewById(R.id.progress_bar)
 
-        btnBack.setOnClickListener { requireActivity().onBackPressed() }
-
-        classroomId = arguments?.getString("classroomId")
-        // Caso queira passar a role dinamicamente por argumentos:
-        currentUserRole = arguments?.getString("userRole") ?: "student"
-
-        if (classroomId.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "ID da sala inválido", Toast.LENGTH_SHORT).show()
-            requireActivity().onBackPressed()
-            return
+        btnBack.setOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
         }
 
         rvEvents.layoutManager = LinearLayoutManager(requireContext())
-        eventsAdapter = EventsAdapter(emptyList()) { eventItem ->
-            handleEventClick(eventItem)
+        eventsAdapter = EventsAdapter(emptyList()) { selectedEvent ->
+            handleEventClick(selectedEvent)
         }
         rvEvents.adapter = eventsAdapter
 
-        calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
-            selectedDateCalendar.set(year, month, dayOfMonth)
+        setupCalendar()
+        loadData()
+    }
 
-            // 1. Atualiza a lista inferior normalmente
-            showEventsForDate(selectedDateCalendar)
+    // -------------------------------------------------------------------------
+    // Configuração do CalendarView (Kizitonwose)
+    // -------------------------------------------------------------------------
 
-            // 2. Busca se existe alguma disponibilidade ou evento mapeado para este dia
-            val dateKey = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(selectedDateCalendar.time)
-            val eventsOnDay = eventsByDate[dateKey]
+    private fun setupCalendar() {
+        // Intervalo: 3 meses para trás, 3 meses para frente
+        val startMonth = currentMonth.minusMonths(3)
+        val endMonth   = currentMonth.plusMonths(3)
 
-            if (!eventsOnDay.isNullOrEmpty()) {
-                // Se houver eventos ou um slot "Disponível", pega o primeiro (idêntico à lógica JS: d_events[0])
-                handleEventClick(eventsOnDay[0])
-            } else {
-                // Caso seja um dia sem nenhuma definição de horário ou evento
-                Toast.makeText(requireContext(), "Não há horários definidos para este dia.", Toast.LENGTH_SHORT).show()
+        calendarView.setup(startMonth, endMonth, firstDayOfWeekFromLocale())
+        calendarView.scrollToMonth(currentMonth)
+
+        // Binder de cada célula de dia
+        calendarView.dayBinder = object : MonthDayBinder<DayViewContainer> {
+            override fun create(view: View) = DayViewContainer(view)
+
+            override fun bind(container: DayViewContainer, data: CalendarDay) {
+                container.tvDay.text = data.date.dayOfMonth.toString()
+
+                // Dias de outros meses ficam translúcidos
+                if (data.position != DayPosition.MonthDate) {
+                    container.tvDay.alpha = 0.3f
+                    container.dot.visibility = View.INVISIBLE
+                    container.view.setOnClickListener(null)
+                    return
+                }
+
+                container.tvDay.alpha = 1f
+
+                // Destaque do dia selecionado
+                if (data.date == selectedDate) {
+                    container.tvDay.setBackgroundResource(R.drawable.bg_btn)
+                } else {
+                    container.tvDay.setBackgroundResource(0)
+                }
+
+                // Dot de status
+                val events = eventsByDate[data.date]
+                if (!events.isNullOrEmpty()) {
+                    val dotRes = when (events[0].status) {
+                        "available" -> R.drawable.bg_dot_green
+                        "pending"   -> R.drawable.bg_dot_orange
+                        "confirmed" -> R.drawable.bg_dot_blue
+                        else        -> R.drawable.bg_dot_default
+                    }
+                    container.dot.setBackgroundResource(dotRes)
+                    container.dot.visibility = View.VISIBLE
+                } else {
+                    container.dot.visibility = View.INVISIBLE
+                }
+
+                // Clique no dia
+                container.view.setOnClickListener {
+                    val previousDate = selectedDate
+                    selectedDate = data.date
+                    // Re-renderiza apenas as duas células afetadas
+                    calendarView.notifyDateChanged(previousDate)
+                    calendarView.notifyDateChanged(selectedDate)
+                    showEventsForDate(selectedDate)
+                }
             }
         }
 
-        loadClassroomDetails()
+        // Navegação de mês com os botões de seta
+        calendarView.monthScrollListener = { month ->
+            currentMonth = month.yearMonth
+            updateMonthYearTitle(currentMonth)
+        }
+
+        btnPrevMonth.setOnClickListener {
+            calendarView.findFirstVisibleMonth()?.let {
+                calendarView.smoothScrollToMonth(it.yearMonth.minusMonths(1))
+            }
+        }
+
+        btnNextMonth.setOnClickListener {
+            calendarView.findFirstVisibleMonth()?.let {
+                calendarView.smoothScrollToMonth(it.yearMonth.plusMonths(1))
+            }
+        }
+
+        updateMonthYearTitle(currentMonth)
     }
 
-    private fun loadClassroomDetails() {
+    /** Atualiza o TextView com o nome do mês e o ano (ex: "Junho 2025") */
+    private fun updateMonthYearTitle(yearMonth: YearMonth) {
+        val monthName = yearMonth.month.getDisplayName(TextStyle.FULL, Locale("pt", "BR"))
+            .replaceFirstChar { it.uppercase() }
+        tvMonthYear.text = "$monthName ${yearMonth.year}"
+    }
+
+    // ViewContainer para cada célula do calendário
+    inner class DayViewContainer(val view: View) : ViewContainer(view) {
+        val tvDay: TextView = view.findViewById(R.id.tv_day_text)
+        val dot: View       = view.findViewById(R.id.view_dot)
+    }
+
+    // -------------------------------------------------------------------------
+    // Carregamento de dados do Firestore
+    // -------------------------------------------------------------------------
+
+    private fun loadData() {
+        if (classroomId == null) return
+
+        progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
-                progressBar.visibility = View.VISIBLE
-                val classroomDoc = db.collection("Classrooms").document(classroomId!!).get().await()
-                if (!classroomDoc.exists()) {
-                    showErrorAndFinish("Sala não encontrada")
-                    return@launch
-                }
+                // 1. Papel do usuário logado
+                val userSnapshot = db.collection("Users").document(currentUid).get().await()
+                currentUserRole = userSnapshot.getString("role") ?: "student"
 
-                curricularUnit = classroomDoc.getString("curricular-unit") ?: "Sem nome"
-                tvClassName.text = curricularUnit
+                // 2. Detalhes da turma
+                val classSnapshot = db.collection("Classrooms").document(classroomId!!).get().await()
+                if (classSnapshot.exists()) {
+                    curricularUnit = classSnapshot.getString("curricular-unit") ?: "Sem nome"
+                    teacherId      = classSnapshot.getString("tenured-teacher")
+                    tvClassName.text = curricularUnit
 
-                teacherId = when (val ref = classroomDoc.get("tenured-teacher")) {
-                    is String -> ref
-                    is com.google.firebase.firestore.DocumentReference -> ref.id
-                    else -> null
-                }
-
-                var availabilityMap: Map<String, Any>? = null
-
-                if (teacherId != null) {
-                    try {
-                        val teacherDoc = db.collection("Users").document(teacherId!!).get().await()
-                        val name = teacherDoc.getString("name") ?: ""
-                        val lastName = teacherDoc.getString("lastname") ?: ""
-                        teacherName = "$name $lastName".trim()
-                        tvTeacherName.text = "Professor(a): $teacherName"
-
-                        availabilityMap = teacherDoc.get("availability") as? Map<String, Any>
-                    } catch (e: Exception) {
-                        tvTeacherName.text = "Professor não encontrado"
+                    teacherId?.let { tId ->
+                        val teacherSnapshot = db.collection("Users").document(tId).get().await()
+                        teacherName = teacherSnapshot.getString("name") ?: "Desconhecido"
+                        tvTeacherName.text = "Prof: $teacherName"
                     }
-                } else {
-                    tvTeacherName.text = "Professor não informado"
                 }
 
-                loadEventsAndAvailability(availabilityMap)
+                // 3. Agenda e horários
+                loadCalendarAndEvents()
 
             } catch (e: Exception) {
-                showErrorAndFinish("Erro ao carregar dados: ${e.message}")
+                Toast.makeText(requireContext(), "Erro ao carregar dados: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                progressBar.visibility = View.GONE
             }
         }
     }
 
-    private suspend fun loadEventsAndAvailability(availability: Map<String, Any>?) {
-        try {
-            val eventsSnapshot = db.collection("Events")
-                .whereEqualTo("classroom-id", classroomId)
-                .get()
-                .await()
+    private suspend fun loadCalendarAndEvents() {
+        eventsByDate.clear()
 
-            eventsByDate.clear()
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        // Eventos reais no Firestore
+        val eventsSnapshot = db.collection("Events")
+            .whereEqualTo("classroom-id", classroomId)
+            .get().await()
 
-            for (doc in eventsSnapshot.documents) {
-                val status = doc.getString("status") ?: "pending"
-                val dateStr = doc.getString("date") ?: continue
-                val participants = doc.get("participants") as? List<String> ?: emptyList()
+        for (doc in eventsSnapshot.documents) {
+            val dateStr      = doc.getString("date") ?: continue // formato yyyy-MM-dd
+            val status       = doc.getString("status") ?: "pending"
+            val participants = doc.get("participants") as? List<*> ?: emptyList<Any>()
+            val isParticipant = participants.contains(currentUid) || teacherId == currentUid
 
-                val displayTitle = when (status) {
-                    "confirmed" -> "Confirmado - $teacherName"
-                    "pending" -> "Pendente - $teacherName"
-                    else -> "Desconhecido - $teacherName"
-                }
+            val localDate = LocalDate.parse(dateStr, isoFormatter)
 
-                eventsByDate.getOrPut(dateStr) { mutableListOf() }.add(
-                    EventItem(
-                        eventId = doc.id,
-                        title = displayTitle,
-                        dateStr = dateStr,
-                        status = status,
-                        participants = participants
+            val event = EventItem(
+                id            = doc.id,
+                title         = if (status == "confirmed") "Confirmado - $teacherName" else "Pendente - $teacherName",
+                dateStr       = dateStr,
+                status        = status,
+                isParticipant = isParticipant,
+                classroom_id  = classroomId ?: ""
+            )
+
+            eventsByDate.getOrPut(localDate) { mutableListOf() }.add(event)
+        }
+
+        // Para alunos: preencher slots disponíveis com base na availability do professor
+        if (currentUserRole == "student" && teacherId != null) {
+            val teacherSnapshot = db.collection("Users").document(teacherId!!).get().await()
+            @Suppress("UNCHECKED_CAST")
+            val availability = teacherSnapshot.get("availability") as? Map<String, Any> ?: emptyMap()
+            generateAvailableSlots(availability)
+        }
+
+        // Re-renderiza o calendário inteiro e atualiza a lista do dia selecionado
+        calendarView.notifyCalendarChanged()
+        showEventsForDate(selectedDate)
+    }
+
+    /**
+     * Igual ao set_available_dates() do format.js:
+     * para cada dia nos próximos 30 dias, se o dia da semana estiver na availability
+     * do professor e ainda não houver evento marcado, adiciona um slot "available".
+     */
+    private fun generateAvailableSlots(availability: Map<String, Any>) {
+        val weekDaysMap = mapOf(
+            "sunday"    to 7, // java.time: DayOfWeek.SUNDAY = 7
+            "monday"    to 1,
+            "tuesday"   to 2,
+            "wednesday" to 3,
+            "thursday"  to 4,
+            "friday"    to 5,
+            "saturday"  to 6
+        )
+
+        val today = LocalDate.now()
+        for (i in 0 until 30) {
+            val futureDate  = today.plusDays(i.toLong())
+            val dayOfWeek   = futureDate.dayOfWeek.value // 1 (Mon) … 7 (Sun)
+            val dateStr     = futureDate.format(isoFormatter)
+
+            for ((dayName, _) in availability) {
+                val targetDay = weekDaysMap[dayName.lowercase()] ?: continue
+                if (targetDay == dayOfWeek && !eventsByDate.containsKey(futureDate)) {
+                    val availableEvent = EventItem(
+                        id            = "avail_$dateStr",
+                        title         = "Disponível",
+                        dateStr       = dateStr,
+                        status        = "available",
+                        isParticipant = false,
+                        classroom_id  = classroomId ?: ""
                     )
-                )
-            }
-
-            if (availability != null) {
-                val weekDaysMap = mapOf(
-                    "sunday" to Calendar.SUNDAY, "monday" to Calendar.MONDAY,
-                    "tuesday" to Calendar.TUESDAY, "wednesday" to Calendar.WEDNESDAY,
-                    "thursday" to Calendar.THURSDAY, "friday" to Calendar.FRIDAY,
-                    "saturday" to Calendar.SATURDAY
-                )
-
-                val today = Calendar.getInstance()
-                for (i in 0 until 30) {
-                    val currentDate = (today.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, i) }
-                    val currentDayOfWeek = currentDate.get(Calendar.DAY_OF_WEEK)
-
-                    for ((dayName, isAvailable) in availability) {
-                        if (isAvailable == true || isAvailable.toString().toBoolean()) {
-                            val targetDayNum = weekDaysMap[dayName.lowercase(Locale.ROOT)]
-                            if (targetDayNum == currentDayOfWeek) {
-                                val dateKey = dateFormat.format(currentDate.time)
-
-                                if (!eventsByDate.containsKey(dateKey)) {
-                                    eventsByDate.getOrPut(dateKey) { mutableListOf() }.add(
-                                        EventItem(
-                                            eventId = null,
-                                            title = "Disponível",
-                                            dateStr = dateKey,
-                                            status = "available",
-                                            participants = emptyList()
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    eventsByDate[futureDate] = mutableListOf(availableEvent)
                 }
-            }
-
-            if (isAdded) {
-                progressBar.visibility = View.GONE
-                showEventsForDate(selectedDateCalendar)
-            }
-        } catch (e: Exception) {
-            if (isAdded) {
-                progressBar.visibility = View.GONE
-                Toast.makeText(requireContext(), "Erro ao processar agenda: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    private fun showEventsForDate(date: Calendar) {
-        val dateKey = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date.time)
-        val events = eventsByDate[dateKey] ?: emptyList()
-        eventsAdapter.updateEvents(events)
+    // -------------------------------------------------------------------------
+    // Interação com a lista de eventos
+    // -------------------------------------------------------------------------
+
+    private fun showEventsForDate(date: LocalDate) {
+        val dayEvents = eventsByDate[date] ?: emptyList()
+        eventsAdapter.updateEvents(dayEvents)
     }
 
-    // Gerenciador de Cliques baseado em Perfis (Equivalente ao student_featured_date e teacher_featured_date)
     private fun handleEventClick(event: EventItem) {
-        val formatBr = formatToPtBr(event.dateStr)
+        val formattedDate = formatToPtBr(event.dateStr)
 
         when (event.status) {
             "available" -> {
                 if (currentUserRole == "student") {
-                    // Lógica do Modal student_featured_date -> Pergunta se deseja Agendar
                     AlertDialog.Builder(requireContext())
-                        .setTitle("Confirmar Agendamento")
-                        .setMessage("Tem certeza que deseja agendar um atendimento com o(a) professor(a) $teacherName no dia $formatBr?")
-                        .setPositiveButton("Sim, Agendar") { _, _ -> scheduleEvent(event.dateStr) }
-                        .setNegativeButton("Não", null)
+                        .setTitle("Agendar Atendimento")
+                        .setMessage("Deseja marcar um agendamento para o dia $formattedDate com o(a) professor(a) $teacherName?")
+                        .setPositiveButton("Agendar") { _, _ -> executeScheduling(event.dateStr) }
+                        .setNegativeButton("Cancelar", null)
                         .show()
                 } else {
-                    // Professor clicando em dia disponível apenas visualiza
-                    Toast.makeText(requireContext(), "Esta data está disponível para agendamento dos alunos.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Este dia está listado como livre para seus alunos.", Toast.LENGTH_SHORT).show()
                 }
             }
+
             "pending" -> {
                 if (currentUserRole == "teacher") {
-                    // Lógica do teacher_featured_date para eventos pendentes
                     AlertDialog.Builder(requireContext())
-                        .setTitle("Agendamento Pendente")
-                        .setMessage("Deseja confirmar ou cancelar o agendamento da disciplina de $curricularUnit no dia $formatBr?")
-                        .setPositiveButton("Confirmar") { _, _ -> confirmEvent(event.eventId!!) }
-                        .setNegativeButton("Cancelar Agendamento") { _, _ -> cancelEvent(event) }
+                        .setTitle("Confirmar Agendamento")
+                        .setMessage("Deseja aprovar ou rejeitar o agendamento de $curricularUnit para o dia $formattedDate?")
+                        .setPositiveButton("Confirmar") { _, _ -> executeConfirmation(event.id) }
+                        .setNegativeButton("Cancelar Agendamento") { _, _ -> executeCancellation(event.id) }
                         .setNeutralButton("Fechar", null)
                         .show()
                 } else {
-                    // Aluno visualiza ou cancela se ele for o participante do agendamento pendente
-                    if (event.participants.contains(currentUid)) {
-                        showCancelDialogForStudent(event, formatBr)
+                    if (event.isParticipant) {
+                        AlertDialog.Builder(requireContext())
+                            .setTitle("Agendamento Pendente")
+                            .setMessage("Você solicitou atendimento em $formattedDate. Deseja cancelar a solicitação?")
+                            .setPositiveButton("Sim, Cancelar") { _, _ -> executeCancellation(event.id) }
+                            .setNegativeButton("Não", null)
+                            .show()
                     } else {
-                        Toast.makeText(requireContext(), "Há um agendamento pendente de outro aluno nesta data.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Horário indisponível (reservado por outro aluno).", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
+
             "confirmed" -> {
-                // Evento confirmado permite cancelamento por ambas as partes
-                if (currentUserRole == "teacher") {
+                if (event.isParticipant) {
                     AlertDialog.Builder(requireContext())
                         .setTitle("Agendamento Confirmado")
-                        .setMessage("Você tem um agendamento confirmado para o dia $formatBr.\nDeseja cancelar este agendamento?")
-                        .setPositiveButton("Sim, Cancelar") { _, _ -> cancelEvent(event) }
-                        .setNegativeButton("Não", null)
+                        .setMessage("Você tem um compromisso dia $formattedDate.\nDeseja cancelar o agendamento?")
+                        .setPositiveButton("Cancelar Presença") { _, _ -> executeCancellation(event.id) }
+                        .setNegativeButton("Voltar", null)
                         .show()
                 } else {
-                    if (event.participants.contains(currentUid)) {
-                        showCancelDialogForStudent(event, formatBr)
-                    } else {
-                        Toast.makeText(requireContext(), "Data reservada para outro aluno.", Toast.LENGTH_SHORT).show()
-                    }
+                    Toast.makeText(requireContext(), "Horário ocupado.", Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
 
-    private fun showCancelDialogForStudent(event: EventItem, dateBr: String) {
-        AlertDialog.Builder(requireContext())
-            .setTitle("Confirmar Cancelamento")
-            .setMessage("Tem certeza que deseja cancelar o agendamento com o(a) professor(a) $teacherName da disciplina de $curricularUnit no dia $dateBr?")
-            .setPositiveButton("Sim, Cancelar") { _, _ -> cancelEvent(event) }
-            .setNegativeButton("Não", null)
-            .show()
-    }
+    // -------------------------------------------------------------------------
+    // Operações no Firestore (mesma lógica dos .php)
+    // -------------------------------------------------------------------------
 
-    // ================= SOLICITAR AGENDAMENTO (schedule_event.php) =================
-    private fun scheduleEvent(dateStr: String) {
+    /** Equivalente ao schedule_event.php */
+    private fun executeScheduling(dateStr: String) {
+        progressBar.visibility = View.VISIBLE
+        val newEvent = hashMapOf(
+            "classroom-id" to classroomId,
+            "date"         to dateStr,
+            "description"  to "none",
+            "participants" to listOf(currentUid),
+            "status"       to "pending"
+        )
+
         lifecycleScope.launch {
             try {
-                progressBar.visibility = View.VISIBLE
+                val docRef  = db.collection("Events").add(newEvent).await()
+                val eventId = docRef.id
 
-                // 1. Prepara e salva o novo documento na coleção "Events"
-                val eventData = hashMapOf(
-                    "classroom-id" to classroomId,
-                    "date" to dateStr,
-                    "description" to "none",
-                    "participants" to listOf(currentUid),
-                    "status" to "pending"
-                )
-                val eventDocRef = db.collection("Events").add(eventData).await()
-                val newEventId = eventDocRef.id
-
-                // 2. Insere o ID do evento no array "calendar" do estudante atual
                 db.collection("Users").document(currentUid)
-                    .update("calendar", FieldValue.arrayUnion(newEventId)).await()
+                    .update("calendar", FieldValue.arrayUnion(eventId)).await()
 
-                // 3. Insere o ID do evento no array "calendar" do professor titular
-                if (!teacherId.isNullOrEmpty()) {
-                    db.collection("Users").document(teacherId!!)
-                        .update("calendar", FieldValue.arrayUnion(newEventId)).await()
+                teacherId?.let { tId ->
+                    db.collection("Users").document(tId)
+                        .update("calendar", FieldValue.arrayUnion(eventId)).await()
                 }
 
-                Toast.makeText(requireContext(), "Atendimento solicitado! Aguarde confirmação do professor.", Toast.LENGTH_LONG).show()
-                loadClassroomDetails() // Recarrega os dados dinamicamente
-
+                Toast.makeText(requireContext(), "Solicitação enviada ao professor!", Toast.LENGTH_SHORT).show()
+                loadCalendarAndEvents()
             } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Erro: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
                 progressBar.visibility = View.GONE
-                Toast.makeText(requireContext(), "Erro ao agendar: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    // ================= CONFIRMAR AGENDAMENTO (confirm_event.php) =================
-    private fun confirmEvent(eventId: String) {
+    /** Equivalente ao confirm_event.php */
+    private fun executeConfirmation(eventId: String) {
+        progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
-                progressBar.visibility = View.VISIBLE
-
-                db.collection("Events").document(eventId)
-                    .update("status", "confirmed").await()
-
-                Toast.makeText(requireContext(), "Agendamento confirmado com sucesso!", Toast.LENGTH_SHORT).show()
-                loadClassroomDetails()
-
+                db.collection("Events").document(eventId).update("status", "confirmed").await()
+                Toast.makeText(requireContext(), "Agendamento confirmado!", Toast.LENGTH_SHORT).show()
+                loadCalendarAndEvents()
             } catch (e: Exception) {
-                progressBar.visibility = View.GONE
                 Toast.makeText(requireContext(), "Erro ao confirmar: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                progressBar.visibility = View.GONE
             }
         }
     }
 
-    // ================= CANCELAR AGENDAMENTO (cancel_event.php) =================
-    private fun cancelEvent(event: EventItem) {
+    /**
+     * Equivalente ao cancel_event.php.
+     *
+     * Lógica PHP preservada:
+     *   - Aluno:    remove-se dos participants; se não restar mais ninguém, deleta o evento;
+     *               caso contrário apenas atualiza participants. Remove eventId do próprio calendar.
+     *   - Professor: deleta o evento diretamente, sem mexer nos participants individualmente.
+     *               Remove eventId do próprio calendar.
+     */
+    private fun executeCancellation(eventId: String) {
+        progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
-                progressBar.visibility = View.VISIBLE
-                val eventDocRef = db.collection("Events").document(event.eventId!!)
-
                 if (currentUserRole == "student") {
-                    // Lógica do Aluno: se remove do array de participantes e limpa seu calendário
-                    db.collection("Users").document(currentUid)
-                        .update("calendar", FieldValue.arrayRemove(event.eventId)).await()
+                    val eventSnapshot = db.collection("Events").document(eventId).get().await()
+                    @Suppress("UNCHECKED_CAST")
+                    val participants = (eventSnapshot.get("participants") as? MutableList<String>)
+                        ?.toMutableList() ?: mutableListOf()
 
-                    val updatedParticipants = event.participants.toMutableList().apply { remove(currentUid) }
+                    participants.remove(currentUid)
 
-                    if (updatedParticipants.isEmpty()) {
-                        // Se não sobrarem participantes, deleta o evento conforme cancel_event.php
-                        eventDocRef.delete().await()
+                    if (participants.isEmpty()) {
+                        db.collection("Events").document(eventId).delete().await()
                     } else {
-                        eventDocRef.update("participants", updatedParticipants).await()
+                        db.collection("Events").document(eventId)
+                            .update("participants", participants).await()
                     }
-                } else {
-                    // Lógica do Professor: Deleta o evento e varre limpando o calendário dos envolvidos
-                    // Remove do próprio professor
+
                     db.collection("Users").document(currentUid)
-                        .update("calendar", FieldValue.arrayRemove(event.eventId)).await()
+                        .update("calendar", FieldValue.arrayRemove(eventId)).await()
 
-                    // Remove de todos os alunos participantes do evento
-                    for (participantUid in event.participants) {
-                        db.collection("Users").document(participantUid)
-                            .update("calendar", FieldValue.arrayRemove(event.eventId)).await()
-                    }
+                } else {
+                    // Professor: deleta o evento direto
+                    db.collection("Events").document(eventId).delete().await()
 
-                    // Por fim, apaga o documento de evento por completo
-                    eventDocRef.delete().await()
+                    db.collection("Users").document(currentUid)
+                        .update("calendar", FieldValue.arrayRemove(eventId)).await()
                 }
 
                 Toast.makeText(requireContext(), "Agendamento cancelado com sucesso.", Toast.LENGTH_SHORT).show()
-                loadClassroomDetails()
-
+                loadCalendarAndEvents()
             } catch (e: Exception) {
-                progressBar.visibility = View.GONE
                 Toast.makeText(requireContext(), "Erro ao cancelar: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                progressBar.visibility = View.GONE
             }
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Utilitários
+    // -------------------------------------------------------------------------
+
     private fun formatToPtBr(dateStr: String): String {
         return try {
-            val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-            parser.parse(dateStr)?.let { formatter.format(it) } ?: dateStr
+            val date = LocalDate.parse(dateStr, isoFormatter)
+            date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
         } catch (e: Exception) {
             dateStr
         }
     }
 
-    private fun showErrorAndFinish(message: String) {
-        if (isAdded) {
-            Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
-            requireActivity().onBackPressed()
-        }
-    }
+    // -------------------------------------------------------------------------
+    // Modelos de dados e Adapter
+    // -------------------------------------------------------------------------
 
-    // Estrutura de dados adaptada com suporte a IDs de controle do Firestore
     data class EventItem(
-        val eventId: String?,
+        val id: String,
         val title: String,
         val dateStr: String,
         val status: String,
-        val participants: List<String>
+        val isParticipant: Boolean,
+        val classroom_id: String
     )
 
     inner class EventsAdapter(
@@ -460,8 +545,8 @@ class ClassroomDetailFragment : Fragment() {
 
                 when (event.status) {
                     "confirmed" -> holder.itemView.setBackgroundResource(R.drawable.bg_event_confirmed)
-                    "pending" -> holder.itemView.setBackgroundResource(R.drawable.bg_event_pending)
-                    else -> holder.itemView.setBackgroundResource(R.drawable.bg_event_default)
+                    "pending"   -> holder.itemView.setBackgroundResource(R.drawable.bg_event_pending)
+                    else        -> holder.itemView.setBackgroundResource(R.drawable.bg_event_default)
                 }
             }
 
@@ -472,7 +557,7 @@ class ClassroomDetailFragment : Fragment() {
 
         inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val tvTitle: TextView = itemView.findViewById(R.id.event_title)
-            val tvDate: TextView = itemView.findViewById(R.id.event_date)
+            val tvDate: TextView  = itemView.findViewById(R.id.event_date)
         }
     }
 }

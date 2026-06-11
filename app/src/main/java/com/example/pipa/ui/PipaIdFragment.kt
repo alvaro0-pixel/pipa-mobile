@@ -26,31 +26,31 @@ class PipaIdFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_pipa_id, container, false)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        tvFullName = view.findViewById(R.id.tv_full_name)
-        tvEmail = view.findViewById(R.id.tv_email)
-        tvRole = view.findViewById(R.id.tv_role)
-
-        val currentUser = FirebaseHelper.getAuth().currentUser ?: return
-        FirebaseFirestore.getInstance()
-            .collection("users")
-            .document(currentUser.uid)
-            .get()
-            .addOnSuccessListener { doc ->
-                val name = doc.getString("name") ?: ""
-                val lastName = doc.getString("lastname") ?: ""
-                val email = doc.getString("email") ?: currentUser.email ?: ""
-                val role = doc.getString("role") ?: ""
-                val roleText = when (role) {
-                    "studie" -> "Estudante"
-                    "teach" -> "Professor(a)"
-                    else -> role
-                }
-                tvFullName.text = "$name $lastName".trim()
-                tvEmail.text = email
-                tvRole.text = roleText
-            }
-    }
+//    @RequiresApi(Build.VERSION_CODES.O)
+//    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+//        super.onViewCreated(view, savedInstanceState)
+//        tvFullName = view.findViewById(R.id.tv_full_name)
+//        tvEmail = view.findViewById(R.id.tv_email)
+//        tvRole = view.findViewById(R.id.tv_role)
+//
+//        val currentUser = FirebaseHelper.getAuth().currentUser ?: return
+//        FirebaseFirestore.getInstance()
+//            .collection("users")
+//            .document(currentUser.uid)
+//            .get()
+//            .addOnSuccessListener { doc ->
+//                val name = doc.getString("name") ?: ""
+//                val lastName = doc.getString("lastname") ?: ""
+//                val email = doc.getString("email") ?: currentUser.email ?: ""
+//                val role = doc.getString("role") ?: ""
+//                val roleText = when (role) {
+//                    "studie" -> "Estudante"
+//                    "teach" -> "Professor(a)"
+//                    else -> role
+//                }
+//                tvFullName.text = "$name $lastName".trim()
+//                tvEmail.text = email
+//                tvRole.text = roleText
+//            }
+//    }
 }

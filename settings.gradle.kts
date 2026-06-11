@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Exercicio4"
+rootProject.name = "pipa"
 include(":app")

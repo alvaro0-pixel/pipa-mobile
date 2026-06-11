@@ -2,7 +2,7 @@
 buildscript {
     repositories {
         google()
-        mavenCentral()  // <-- adicione esta linha
+        mavenCentral()
     }
     dependencies {
         val nav_version = "2.9.8"
