@@ -2,6 +2,7 @@ package com.example.pipa.ui
 
 import android.app.AlertDialog
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -60,6 +61,10 @@ class ClassroomDetailFragment : Fragment() {
     private var selectedDate: LocalDate = LocalDate.now()
     private var currentMonth: YearMonth = YearMonth.now()
 
+    companion object {
+        private const val TAG = "PIPA_CALENDAR_DEBUG"
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -70,7 +75,9 @@ class ClassroomDetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        classroomId = arguments?.getString("id")
+        // Tenta buscar o ID por duas chaves possíveis para evitar incompatibilidade na navegação
+        classroomId = arguments?.getString("id") ?: arguments?.getString("classroomId")
+        Log.d(TAG, "onViewCreated: ID da sala recuperado = $classroomId")
 
         btnBack       = view.findViewById(R.id.btn_back)
         tvClassName   = view.findViewById(R.id.tv_class_name)
@@ -138,8 +145,6 @@ class ClassroomDetailFragment : Fragment() {
                 if (data.date == selectedDate) {
                     container.tvDay.setBackgroundResource(R.drawable.bg_btn)
                     container.tvDay.setTextColor(context.getColor(R.color.black))
-                } else if (events.isNullOrEmpty()) {
-                    container.tvDay.setBackgroundResource(0)
                 }
 
                 if (!events.isNullOrEmpty()) {
@@ -201,110 +206,140 @@ class ClassroomDetailFragment : Fragment() {
     }
 
     private fun loadData() {
-        if (classroomId == null) return
+        if (classroomId == null) {
+            Log.e(TAG, "ERRO: classroomId é nulo no loadData(). Impossível prosseguir.")
+            Toast.makeText(requireContext(), "Erro: Sala não identificada.", Toast.LENGTH_SHORT).show()
+            return
+        }
 
         progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
+                // Passo 1: Descobrir o perfil e a Role de quem está logado
                 val userSnapshot = db.collection("Users").document(currentUid).get().await()
                 currentUserRole = userSnapshot.getString("role") ?: "student"
 
+                // Passo 2: Puxar os dados da Classroom usando o ID da Sala
                 val classSnapshot = db.collection("Classrooms").document(classroomId!!).get().await()
+
                 if (classSnapshot.exists()) {
                     curricularUnit = classSnapshot.getString("curricular-unit") ?: "Sem nome"
+                    // Resgata o ID do Professor dono desta sala
                     teacherId      = classSnapshot.getString("tenured-teacher")
                     tvClassName.text = curricularUnit
 
-                    teacherId?.let { tId ->
-                        val teacherSnapshot = db.collection("Users").document(tId).get().await()
+                    Log.d(TAG, "Classroom carregada: $curricularUnit | ID do Professor obtido: $teacherId")
+
+                    // Passo 3: Usando o ID do professor, resgata o nome dele para exibição na UI
+                    if (!teacherId.isNullOrEmpty()) {
+                        val teacherSnapshot = db.collection("Users").document(teacherId!!).get().await()
                         teacherName = teacherSnapshot.getString("name") ?: "Desconhecido"
                         tvTeacherName.text = "Prof: $teacherName"
                     }
+                } else {
+                    Log.e(TAG, "Documento da Classroom não encontrado no banco para o ID: $classroomId")
                 }
 
+                // Dispara o carregamento e cruzamento de agendas
                 loadCalendarAndEvents()
 
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Erro ao carregar dados: ${e.message}", Toast.LENGTH_SHORT).show()
+                Log.e(TAG, "Erro ao encadear dados iniciais: ${e.message}", e)
             } finally {
                 progressBar.visibility = View.GONE
             }
         }
     }
 
-    // BASEADO DIRETAMENTE EM: get_calendar_data(2).php e format(2).js
     private suspend fun loadCalendarAndEvents() {
         eventsByDate.clear()
+        Log.i(TAG, "================ INICIANDO CARREGAMENTO DO CALENDÁRIO ================")
 
-        // 1. Obtém a lista oficial de IDs de eventos vinculados ao usuário logado
-        val userSnapshot = db.collection("Users").document(currentUid).get().await()
-        val userCalendarIDs = userSnapshot.get("calendar") as? List<*> ?: emptyList<Any>()
+        try {
+            // Pega os IDs de agendamentos que o usuário possui ativos
+            val userSnapshot = db.collection("Users").document(currentUid).get().await()
+            val userCalendarIDs = userSnapshot.get("calendar") as? List<*> ?: emptyList<Any>()
 
-        // 2. Filtra os eventos que pertencem a esta Turma específica
-        val eventsSnapshot = db.collection("Events")
-            .whereEqualTo("classroom-id", classroomId)
-            .get().await()
+            // Puxa eventos associados a esta sala
+            val eventsSnapshot = db.collection("Events")
+                .whereEqualTo("classroom-id", classroomId)
+                .get().await()
 
-        for (doc in eventsSnapshot.documents) {
-            val eventId = doc.id
+            // 1. Mapeia e renderiza agendamentos físicos existentes no Firestore
+            for (doc in eventsSnapshot.documents) {
+                val eventId = doc.id
+                val dateStr = doc.getString("date") ?: continue
+                val status  = doc.getString("status") ?: "pending"
 
-            // Se for visão de Aluno, ele só enxerga eventos cujo ID esteja listado no array "calendar" dele
-            if (currentUserRole == "student" && !userCalendarIDs.contains(eventId)) {
-                continue
+                if (currentUserRole == "student" && !userCalendarIDs.contains(eventId)) {
+                    continue
+                }
+
+                val participants  = doc.get("participants") as? List<*> ?: emptyList<Any>()
+                val isParticipant = participants.contains(currentUid) || teacherId == currentUid
+
+                val localDate = try {
+                    LocalDate.parse(dateStr, isoFormatter)
+                } catch (e: Exception) {
+                    continue
+                }
+
+                val displayStatus = when (status) {
+                    "pending"   -> "Pendente"
+                    "confirmed" -> "Confirmado"
+                    else        -> "Desconhecido"
+                }
+                val eventTitle = "$displayStatus - $teacherName"
+
+                val event = EventItem(
+                    id            = eventId,
+                    title         = eventTitle,
+                    dateStr       = dateStr,
+                    status        = status,
+                    isParticipant = isParticipant,
+                    classroom_id  = classroomId ?: ""
+                )
+
+                eventsByDate.getOrPut(localDate) { mutableListOf() }.add(event)
+
+                // PRINT LOG SOLICITADO: DIA - MES - ANO - STATUS - ID DA SALA
+                Log.i(TAG, "${localDate.dayOfMonth} - ${localDate.monthValue} - ${localDate.year} - $status - $classroomId")
             }
 
-            val dateStr = doc.getString("date") ?: continue
-            val status  = doc.getString("status") ?: "pending"
+            // 2. IMPORTANTE: Usando o ID do professor, busca o mapa 'availability' direto do nó do professor
+            if (currentUserRole == "student" && !teacherId.isNullOrEmpty()) {
+                Log.d(TAG, "Puxando dados do calendário do professor via ID: $teacherId")
 
-            val participants  = doc.get("participants") as? List<*> ?: emptyList<Any>()
-            val isParticipant = participants.contains(currentUid) || teacherId == currentUid
+                val teacherSnapshot = db.collection("Users").document(teacherId!!).get().await()
+                @Suppress("UNCHECKED_CAST")
+                val availability = teacherSnapshot.get("availability") as? Map<String, Any> ?: emptyMap()
 
-            val localDate = LocalDate.parse(dateStr, isoFormatter)
-
-            // Formatação idêntica ao format_event() do JS
-            val displayStatus = when (status) {
-                "pending"   -> "Pendente"
-                "confirmed" -> "Confirmado"
-                else        -> "Desconhecido"
+                // Gera os blocos virtuais de "Disponível" baseados no calendário dele
+                generateAvailableSlots(availability)
             }
-            val eventTitle = "$displayStatus - $teacherName"
 
-            val event = EventItem(
-                id            = eventId,
-                title         = eventTitle,
-                dateStr       = dateStr,
-                status        = status, // Mantém a string original ("pending"/"confirmed") para controle lógico
-                isParticipant = isParticipant,
-                classroom_id  = classroomId ?: ""
-            )
-
-            eventsByDate.getOrPut(localDate) { mutableListOf() }.add(event)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro na leitura de coleções: ${e.message}", e)
         }
 
-        // 3. Se for Aluno, injeta os dias livres com base na disponibilidade do Professor (set_available_dates)
-        if (currentUserRole == "student" && teacherId != null) {
-            val teacherSnapshot = db.collection("Users").document(teacherId!!).get().await()
-            @Suppress("UNCHECKED_CAST")
-            val availability = teacherSnapshot.get("availability") as? Map<String, Any> ?: emptyMap()
-            generateAvailableSlots(availability)
-        }
-
+        Log.i(TAG, "================ FIM DO CARREGAMENTO DO CALENDÁRIO ================")
         calendarView.notifyCalendarChanged()
         showEventsForDate(selectedDate)
     }
 
     private fun generateAvailableSlots(availability: Map<String, Any>) {
         val weekDaysMap = mapOf(
-            "sunday"    to 7, // LocalDate considera Domingo como 7
             "monday"    to 1,
             "tuesday"   to 2,
             "wednesday" to 3,
             "thursday"  to 4,
             "friday"    to 5,
-            "saturday"  to 6
+            "saturday"  to 6,
+            "sunday"    to 7
         )
 
         val today = LocalDate.now()
+
         for (i in 0 until 30) {
             val futureDate  = today.plusDays(i.toLong())
             val dayOfWeek   = futureDate.dayOfWeek.value
@@ -313,16 +348,21 @@ class ClassroomDetailFragment : Fragment() {
             for ((dayName, _) in availability) {
                 val targetDay = weekDaysMap[dayName.lowercase()] ?: continue
 
-                if (targetDay == dayOfWeek && !eventsByDate.containsKey(futureDate)) {
-                    val availableEvent = EventItem(
-                        id            = "avail_$dateStr",
-                        title         = "Disponível",
-                        dateStr       = dateStr,
-                        status        = "available",
-                        isParticipant = false,
-                        classroom_id  = classroomId ?: ""
-                    )
-                    eventsByDate.getOrPut(futureDate) { mutableListOf() }.add(availableEvent)
+                if (targetDay == dayOfWeek) {
+                    if (!eventsByDate.containsKey(futureDate)) {
+                        val availableEvent = EventItem(
+                            id            = "avail_$dateStr",
+                            title         = "Disponível",
+                            dateStr       = dateStr,
+                            status        = "available",
+                            isParticipant = false,
+                            classroom_id  = classroomId ?: ""
+                        )
+                        eventsByDate.getOrPut(futureDate) { mutableListOf() }.add(availableEvent)
+
+                        // PRINT LOG SOLICITADO PARA DIAS DISPONÍVEIS
+                        Log.i(TAG, "${futureDate.dayOfMonth} - ${futureDate.monthValue} - ${futureDate.year} - available - $classroomId")
+                    }
                 }
             }
         }
@@ -471,7 +511,7 @@ class ClassroomDetailFragment : Fragment() {
 
                 AlertDialog.Builder(requireContext())
                     .setTitle("Feito!")
-                    .setMessage("Agendamento confirmado com sucesso.")
+                    .setMessage("Agendamento confirmed com sucesso.")
                     .setPositiveButton("OK", null)
                     .show()
 
