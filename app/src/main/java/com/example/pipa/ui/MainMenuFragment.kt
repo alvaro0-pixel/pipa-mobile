@@ -14,14 +14,14 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import com.example.pipa.R
-import com.example.pipa.databinding.FragmentHomeNewBinding // nome gerado a partir do layout
+import com.example.pipa.databinding.FragmentHomeBinding // nome gerado a partir do layout
 import com.example.pipa.util.FirebaseHelper
 import com.example.pipa.util.showBottomSheet
 import com.google.android.material.navigation.NavigationView
 
 class MainMenuFragment : Fragment() {
 
-    private var _binding: FragmentHomeNewBinding? = null
+    private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
     override fun onCreateView(
@@ -29,7 +29,7 @@ class MainMenuFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentHomeNewBinding.inflate(inflater, container, false)
+        _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
     }
 
