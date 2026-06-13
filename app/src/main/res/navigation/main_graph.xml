@@ -59,7 +59,7 @@
         android:id="@+id/homeFragment"
         android:name="com.example.pipa.ui.MainMenuFragment"
         android:label="fragment_main_menu"
-        tools:layout="@layout/fragment_home_new">
+        tools:layout="@layout/fragment_home">
 
         <action
             android:id="@+id/action_homeFragment_to_autentication"
