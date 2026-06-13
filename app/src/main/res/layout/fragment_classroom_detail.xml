@@ -6,7 +6,6 @@
     android:orientation="vertical"
     android:background="@color/color_default">
 
-    <!-- Cabeçalho com seta de voltar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -57,7 +56,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Informações da turma -->
             <TextView
                 android:id="@+id/tv_class_name"
                 android:layout_width="match_parent"
@@ -76,14 +74,13 @@
                 android:textSize="14sp"
                 android:textColor="@color/white" />
 
-            <!-- Cabeçalho de navegação de mês -->
             <LinearLayout
                 android:id="@+id/calendar_header"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="4dp">
+                android:layout_marginBottom="8dp">
 
                 <ImageButton
                     android:id="@+id/btn_prev_month"
@@ -115,54 +112,55 @@
 
             </LinearLayout>
 
-            <!-- Labels dos dias da semana -->
-            <LinearLayout
-                android:id="@+id/calendar_days_header"
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:weightSum="7"
-                android:layout_marginBottom="2dp">
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@android:color/white">
 
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:gravity="center"
-                    android:text="Dom" android:textSize="11sp" android:textColor="@color/white" />
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:gravity="center"
-                    android:text="Seg" android:textSize="11sp" android:textColor="@color/white" />
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:gravity="center"
-                    android:text="Ter" android:textSize="11sp" android:textColor="@color/white" />
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:gravity="center"
-                    android:text="Qua" android:textSize="11sp" android:textColor="@color/white" />
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:gravity="center"
-                    android:text="Qui" android:textSize="11sp" android:textColor="@color/white" />
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:gravity="center"
-                    android:text="Sex" android:textSize="11sp" android:textColor="@color/white" />
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:gravity="center"
-                    android:text="Sáb" android:textSize="11sp" android:textColor="@color/white" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
 
-            </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/calendar_days_header"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="7"
+                        android:layout_marginBottom="8dp">
 
-            <!-- Kizitonwose CalendarView -->
-            <com.kizitonwose.calendar.view.CalendarView
-                android:id="@+id/calendar_view"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cv_dayViewResource="@layout/item_calendar_day"/>
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="Dom" android:textSize="12sp" android:textColor="#757575" android:textStyle="bold" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="Seg" android:textSize="12sp" android:textColor="#212121" android:textStyle="bold" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="Ter" android:textSize="12sp" android:textColor="#212121" android:textStyle="bold" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="Qua" android:textSize="12sp" android:textColor="#212121" android:textStyle="bold" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="Qui" android:textSize="12sp" android:textColor="#212121" android:textStyle="bold" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="Sex" android:textSize="12sp" android:textColor="#212121" android:textStyle="bold" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="Sáb" android:textSize="12sp" android:textColor="#757575" android:textStyle="bold" />
 
-            <!-- Legenda dos dots -->
+                    </LinearLayout>
+
+                    <com.kizitonwose.calendar.view.CalendarView
+                        android:id="@+id/calendar_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cv_dayViewResource="@layout/item_calendar_day"/>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center"
                 android:layout_marginTop="8dp"
-                android:layout_marginBottom="8dp">
+                android:layout_marginBottom="16dp">
 
                 <View
                     android:layout_width="10dp"
@@ -192,7 +190,6 @@
 
             </LinearLayout>
 
-            <!-- Lista de eventos do dia selecionado -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_events"
                 android:layout_width="match_parent"

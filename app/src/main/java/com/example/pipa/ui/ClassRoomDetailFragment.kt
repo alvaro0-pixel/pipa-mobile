@@ -1,6 +1,7 @@
 package com.example.pipa.ui
 
 import android.app.AlertDialog
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -75,9 +76,8 @@ class ClassroomDetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Tenta buscar o ID por duas chaves possíveis para evitar incompatibilidade na navegação
         classroomId = arguments?.getString("id") ?: arguments?.getString("classroomId")
-        Log.d(TAG, "onViewCreated: ID da sala recuperado = $classroomId")
+        Log.d(TAG, "onViewCreated: ID da sala obtido nos argumentos = $classroomId")
 
         btnBack       = view.findViewById(R.id.btn_back)
         tvClassName   = view.findViewById(R.id.tv_class_name)
@@ -117,10 +117,12 @@ class ClassroomDetailFragment : Fragment() {
                 container.tvDay.text = data.date.dayOfMonth.toString()
                 val context = container.view.context
 
+                // 1. Limpeza e opacidade para dias fora do mês atual
                 if (data.position != DayPosition.MonthDate) {
                     container.tvDay.alpha = 0.3f
                     container.dot.visibility = View.INVISIBLE
                     container.view.setBackgroundResource(0)
+                    container.tvDay.setBackgroundResource(0)
                     container.view.setOnClickListener(null)
                     return
                 }
@@ -128,6 +130,7 @@ class ClassroomDetailFragment : Fragment() {
                 container.tvDay.alpha = 1f
                 val events = eventsByDate[data.date]
 
+                // 2. Define o fundo do container de acordo com o status do evento
                 if (!events.isNullOrEmpty()) {
                     val backgroundRes = when (events[0].status) {
                         "available" -> R.drawable.bg_event_available
@@ -136,17 +139,27 @@ class ClassroomDetailFragment : Fragment() {
                         else        -> R.drawable.bg_event_default
                     }
                     container.view.setBackgroundResource(backgroundRes)
-                    container.tvDay.setTextColor(context.getColor(R.color.white))
                 } else {
                     container.view.setBackgroundResource(0)
-                    container.tvDay.setTextColor(context.getColor(R.color.white))
                 }
 
+                // 3. CONTROLE VISUAL DA SELEÇÃO E CONTRASTE (CORREÇÃO DE TEXTO RESIDUAL E FUNDO BRANCO)
                 if (data.date == selectedDate) {
-                    container.tvDay.setBackgroundResource(R.drawable.bg_btn)
+                    container.tvDay.setBackgroundResource(R.drawable.bg_btn) // Destaque circular do dia selecionado
                     container.tvDay.setTextColor(context.getColor(R.color.black))
+                } else {
+                    container.tvDay.setBackgroundResource(0) // Remove totalmente o destaque branco do dia anterior
+
+                    // Se o dia possuir um evento com cor de fundo, o texto fica BRANCO.
+                    // Se for um dia comum sem nada em cima do fundo branco do calendário, o texto fica ESCURO.
+                    if (!events.isNullOrEmpty()) {
+                        container.tvDay.setTextColor(context.getColor(R.color.white))
+                    } else {
+                        container.tvDay.setTextColor(Color.parseColor("#212121"))
+                    }
                 }
 
+                // 4. Indicador inferior (Dot)
                 if (!events.isNullOrEmpty()) {
                     val dotRes = when (events[0].status) {
                         "available" -> R.drawable.bg_dot_green
@@ -160,9 +173,12 @@ class ClassroomDetailFragment : Fragment() {
                     container.dot.visibility = View.INVISIBLE
                 }
 
+                // 5. Gestão do clique
                 container.view.setOnClickListener {
                     val previousDate = selectedDate
                     selectedDate = data.date
+
+                    // Notifica apenas os dias alterados para forçar o redesenho sem lixo visual
                     calendarView.notifyDateChanged(previousDate)
                     calendarView.notifyDateChanged(selectedDate)
                     showEventsForDate(selectedDate)
@@ -207,7 +223,7 @@ class ClassroomDetailFragment : Fragment() {
 
     private fun loadData() {
         if (classroomId == null) {
-            Log.e(TAG, "ERRO: classroomId é nulo no loadData(). Impossível prosseguir.")
+            Log.e(TAG, "ERRO: O classroomId veio nulo. Não é possível chamar dados.")
             Toast.makeText(requireContext(), "Erro: Sala não identificada.", Toast.LENGTH_SHORT).show()
             return
         }
@@ -215,36 +231,31 @@ class ClassroomDetailFragment : Fragment() {
         progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
-                // Passo 1: Descobrir o perfil e a Role de quem está logado
                 val userSnapshot = db.collection("Users").document(currentUid).get().await()
                 currentUserRole = userSnapshot.getString("role") ?: "student"
 
-                // Passo 2: Puxar os dados da Classroom usando o ID da Sala
                 val classSnapshot = db.collection("Classrooms").document(classroomId!!).get().await()
 
                 if (classSnapshot.exists()) {
                     curricularUnit = classSnapshot.getString("curricular-unit") ?: "Sem nome"
-                    // Resgata o ID do Professor dono desta sala
                     teacherId      = classSnapshot.getString("tenured-teacher")
                     tvClassName.text = curricularUnit
 
-                    Log.d(TAG, "Classroom carregada: $curricularUnit | ID do Professor obtido: $teacherId")
+                    Log.d(TAG, "Classroom carregada: $curricularUnit | ID do Professor: $teacherId")
 
-                    // Passo 3: Usando o ID do professor, resgata o nome dele para exibição na UI
                     if (!teacherId.isNullOrEmpty()) {
                         val teacherSnapshot = db.collection("Users").document(teacherId!!).get().await()
                         teacherName = teacherSnapshot.getString("name") ?: "Desconhecido"
                         tvTeacherName.text = "Prof: $teacherName"
                     }
                 } else {
-                    Log.e(TAG, "Documento da Classroom não encontrado no banco para o ID: $classroomId")
+                    Log.e(TAG, "O documento Classroom com ID '$classroomId' não existe no Firestore.")
                 }
 
-                // Dispara o carregamento e cruzamento de agendas
                 loadCalendarAndEvents()
 
             } catch (e: Exception) {
-                Log.e(TAG, "Erro ao encadear dados iniciais: ${e.message}", e)
+                Log.e(TAG, "Erro fatal na árvore de carregamento sequencial de dados: ${e.message}", e)
             } finally {
                 progressBar.visibility = View.GONE
             }
@@ -256,16 +267,13 @@ class ClassroomDetailFragment : Fragment() {
         Log.i(TAG, "================ INICIANDO CARREGAMENTO DO CALENDÁRIO ================")
 
         try {
-            // Pega os IDs de agendamentos que o usuário possui ativos
             val userSnapshot = db.collection("Users").document(currentUid).get().await()
             val userCalendarIDs = userSnapshot.get("calendar") as? List<*> ?: emptyList<Any>()
 
-            // Puxa eventos associados a esta sala
             val eventsSnapshot = db.collection("Events")
                 .whereEqualTo("classroom-id", classroomId)
                 .get().await()
 
-            // 1. Mapeia e renderiza agendamentos físicos existentes no Firestore
             for (doc in eventsSnapshot.documents) {
                 val eventId = doc.id
                 val dateStr = doc.getString("date") ?: continue
@@ -301,25 +309,21 @@ class ClassroomDetailFragment : Fragment() {
                 )
 
                 eventsByDate.getOrPut(localDate) { mutableListOf() }.add(event)
-
-                // PRINT LOG SOLICITADO: DIA - MES - ANO - STATUS - ID DA SALA
                 Log.i(TAG, "${localDate.dayOfMonth} - ${localDate.monthValue} - ${localDate.year} - $status - $classroomId")
             }
 
-            // 2. IMPORTANTE: Usando o ID do professor, busca o mapa 'availability' direto do nó do professor
             if (currentUserRole == "student" && !teacherId.isNullOrEmpty()) {
-                Log.d(TAG, "Puxando dados do calendário do professor via ID: $teacherId")
+                Log.d(TAG, "Buscando dados de calendário e disponibilidade do professor: $teacherId")
 
                 val teacherSnapshot = db.collection("Users").document(teacherId!!).get().await()
                 @Suppress("UNCHECKED_CAST")
                 val availability = teacherSnapshot.get("availability") as? Map<String, Any> ?: emptyMap()
 
-                // Gera os blocos virtuais de "Disponível" baseados no calendário dele
                 generateAvailableSlots(availability)
             }
 
         } catch (e: Exception) {
-            Log.e(TAG, "Erro na leitura de coleções: ${e.message}", e)
+            Log.e(TAG, "Erro de processamento nas coleções do Firestore: ${e.message}", e)
         }
 
         Log.i(TAG, "================ FIM DO CARREGAMENTO DO CALENDÁRIO ================")
@@ -359,8 +363,6 @@ class ClassroomDetailFragment : Fragment() {
                             classroom_id  = classroomId ?: ""
                         )
                         eventsByDate.getOrPut(futureDate) { mutableListOf() }.add(availableEvent)
-
-                        // PRINT LOG SOLICITADO PARA DIAS DISPONÍVEIS
                         Log.i(TAG, "${futureDate.dayOfMonth} - ${futureDate.monthValue} - ${futureDate.year} - available - $classroomId")
                     }
                 }
@@ -511,7 +513,7 @@ class ClassroomDetailFragment : Fragment() {
 
                 AlertDialog.Builder(requireContext())
                     .setTitle("Feito!")
-                    .setMessage("Agendamento confirmed com sucesso.")
+                    .setMessage("Agendamento confirmado com sucesso.")
                     .setPositiveButton("OK", null)
                     .show()
 
