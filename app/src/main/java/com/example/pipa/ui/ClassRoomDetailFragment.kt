@@ -117,7 +117,6 @@ class ClassroomDetailFragment : Fragment() {
                 container.tvDay.text = data.date.dayOfMonth.toString()
                 val context = container.view.context
 
-                // 1. Limpeza e opacidade para dias fora do mês atual
                 if (data.position != DayPosition.MonthDate) {
                     container.tvDay.alpha = 0.3f
                     container.dot.visibility = View.INVISIBLE
@@ -130,7 +129,6 @@ class ClassroomDetailFragment : Fragment() {
                 container.tvDay.alpha = 1f
                 val events = eventsByDate[data.date]
 
-                // 2. Define o fundo do container de acordo com o status do evento
                 if (!events.isNullOrEmpty()) {
                     val backgroundRes = when (events[0].status) {
                         "available" -> R.drawable.bg_event_available
@@ -143,15 +141,12 @@ class ClassroomDetailFragment : Fragment() {
                     container.view.setBackgroundResource(0)
                 }
 
-                // 3. CONTROLE VISUAL DA SELEÇÃO E CONTRASTE (CORREÇÃO DE TEXTO RESIDUAL E FUNDO BRANCO)
                 if (data.date == selectedDate) {
-                    container.tvDay.setBackgroundResource(R.drawable.bg_btn) // Destaque circular do dia selecionado
+                    container.tvDay.setBackgroundResource(R.drawable.bg_btn)
                     container.tvDay.setTextColor(context.getColor(R.color.black))
                 } else {
-                    container.tvDay.setBackgroundResource(0) // Remove totalmente o destaque branco do dia anterior
+                    container.tvDay.setBackgroundResource(0)
 
-                    // Se o dia possuir um evento com cor de fundo, o texto fica BRANCO.
-                    // Se for um dia comum sem nada em cima do fundo branco do calendário, o texto fica ESCURO.
                     if (!events.isNullOrEmpty()) {
                         container.tvDay.setTextColor(context.getColor(R.color.white))
                     } else {
@@ -159,7 +154,6 @@ class ClassroomDetailFragment : Fragment() {
                     }
                 }
 
-                // 4. Indicador inferior (Dot)
                 if (!events.isNullOrEmpty()) {
                     val dotRes = when (events[0].status) {
                         "available" -> R.drawable.bg_dot_green
@@ -173,19 +167,13 @@ class ClassroomDetailFragment : Fragment() {
                     container.dot.visibility = View.INVISIBLE
                 }
 
-                // 5. Gestão do clique
                 container.view.setOnClickListener {
                     val previousDate = selectedDate
                     selectedDate = data.date
 
-                    // Notifica apenas os dias alterados para forçar o redesenho sem lixo visual
                     calendarView.notifyDateChanged(previousDate)
                     calendarView.notifyDateChanged(selectedDate)
                     showEventsForDate(selectedDate)
-
-                    if (events.isNullOrEmpty()) {
-                        showModalNonFeaturedDateClick(data.date.format(isoFormatter))
-                    }
                 }
             }
         }
@@ -223,7 +211,7 @@ class ClassroomDetailFragment : Fragment() {
 
     private fun loadData() {
         if (classroomId == null) {
-            Log.e(TAG, "ERRO: O classroomId veio nulo. Não é possível chamar dados.")
+            Log.e(TAG, "ERRO: O classroomId veio nulo.")
             Toast.makeText(requireContext(), "Erro: Sala não identificada.", Toast.LENGTH_SHORT).show()
             return
         }
@@ -241,21 +229,19 @@ class ClassroomDetailFragment : Fragment() {
                     teacherId      = classSnapshot.getString("tenured-teacher")
                     tvClassName.text = curricularUnit
 
-                    Log.d(TAG, "Classroom carregada: $curricularUnit | ID do Professor: $teacherId")
-
                     if (!teacherId.isNullOrEmpty()) {
                         val teacherSnapshot = db.collection("Users").document(teacherId!!).get().await()
                         teacherName = teacherSnapshot.getString("name") ?: "Desconhecido"
                         tvTeacherName.text = "Prof: $teacherName"
                     }
-                } else {
-                    Log.e(TAG, "O documento Classroom com ID '$classroomId' não existe no Firestore.")
                 }
 
                 loadCalendarAndEvents()
 
             } catch (e: Exception) {
-                Log.e(TAG, "Erro fatal na árvore de carregamento sequencial de dados: ${e.message}", e)
+                Log.e(TAG, "Erro no carregamento de dados: ${e.message}", e)
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro fatal: ${e.message}", e)
             } finally {
                 progressBar.visibility = View.GONE
             }
@@ -264,7 +250,6 @@ class ClassroomDetailFragment : Fragment() {
 
     private suspend fun loadCalendarAndEvents() {
         eventsByDate.clear()
-        Log.i(TAG, "================ INICIANDO CARREGAMENTO DO CALENDÁRIO ================")
 
         try {
             val userSnapshot = db.collection("Users").document(currentUid).get().await()
@@ -309,12 +294,9 @@ class ClassroomDetailFragment : Fragment() {
                 )
 
                 eventsByDate.getOrPut(localDate) { mutableListOf() }.add(event)
-                Log.i(TAG, "${localDate.dayOfMonth} - ${localDate.monthValue} - ${localDate.year} - $status - $classroomId")
             }
 
             if (currentUserRole == "student" && !teacherId.isNullOrEmpty()) {
-                Log.d(TAG, "Buscando dados de calendário e disponibilidade do professor: $teacherId")
-
                 val teacherSnapshot = db.collection("Users").document(teacherId!!).get().await()
                 @Suppress("UNCHECKED_CAST")
                 val availability = teacherSnapshot.get("availability") as? Map<String, Any> ?: emptyMap()
@@ -323,10 +305,9 @@ class ClassroomDetailFragment : Fragment() {
             }
 
         } catch (e: Exception) {
-            Log.e(TAG, "Erro de processamento nas coleções do Firestore: ${e.message}", e)
+            Log.e(TAG, "Erro nas coleções do Firestore: ${e.message}", e)
         }
 
-        Log.i(TAG, "================ FIM DO CARREGAMENTO DO CALENDÁRIO ================")
         calendarView.notifyCalendarChanged()
         showEventsForDate(selectedDate)
     }
@@ -363,7 +344,6 @@ class ClassroomDetailFragment : Fragment() {
                             classroom_id  = classroomId ?: ""
                         )
                         eventsByDate.getOrPut(futureDate) { mutableListOf() }.add(availableEvent)
-                        Log.i(TAG, "${futureDate.dayOfMonth} - ${futureDate.monthValue} - ${futureDate.year} - available - $classroomId")
                     }
                 }
             }
@@ -372,7 +352,21 @@ class ClassroomDetailFragment : Fragment() {
 
     private fun showEventsForDate(date: LocalDate) {
         val dayEvents = eventsByDate[date] ?: emptyList()
-        eventsAdapter.updateEvents(dayEvents)
+
+        if (dayEvents.isEmpty()) {
+            val formattedDate = formatToPtBr(date.format(isoFormatter))
+            val emptyStateNotice = EventItem(
+                id = "empty_notice",
+                title = "Não há agendamentos para o dia $formattedDate.",
+                dateStr = date.format(isoFormatter),
+                status = "empty_state",
+                isParticipant = false,
+                classroom_id = ""
+            )
+            eventsAdapter.updateEvents(listOf(emptyStateNotice))
+        } else {
+            eventsAdapter.updateEvents(dayEvents)
+        }
     }
 
     private fun handleEventClick(event: EventItem) {
@@ -402,19 +396,7 @@ class ClassroomDetailFragment : Fragment() {
                     Toast.makeText(requireContext(), "Horário ocupado.", Toast.LENGTH_SHORT).show()
                 }
             }
-            else -> {
-                showModalNonFeaturedDateClick(event.dateStr)
-            }
         }
-    }
-
-    private fun showModalNonFeaturedDateClick(dateStr: String) {
-        val formattedDate = formatToPtBr(dateStr)
-        AlertDialog.Builder(requireContext())
-            .setTitle("Nada nesta data")
-            .setMessage("Não há agendamentos para o dia $formattedDate.")
-            .setPositiveButton("OK", null)
-            .show()
     }
 
     private fun showModalConfirmScheduleEvent(dateStr: String) {
@@ -497,6 +479,8 @@ class ClassroomDetailFragment : Fragment() {
                     .show()
 
                 loadCalendarAndEvents()
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Erro: ${e.message}", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Erro: ${e.message}", Toast.LENGTH_SHORT).show()
             } finally {
@@ -606,24 +590,33 @@ class ClassroomDetailFragment : Fragment() {
             holder.tvTitle.text = event.title
             val context = holder.itemView.context
 
-            if (event.status == "available") {
-                holder.tvDate.text = "Livre para agendamento"
-                holder.itemView.setBackgroundResource(R.drawable.bg_event_available)
-                holder.tvTitle.setTextColor(context.getColor(R.color.white))
-                holder.tvDate.setTextColor(context.getColor(R.color.white))
-            } else {
-                holder.tvDate.text = formatToPtBr(event.dateStr)
-                holder.tvTitle.setTextColor(context.getColor(R.color.black))
-                holder.tvDate.setTextColor(context.getColor(R.color.color_default_dark))
+            when (event.status) {
+                "empty_state" -> {
+                    holder.tvDate.text = ""
+                    holder.itemView.setBackgroundResource(0)
+                    holder.tvTitle.setTextColor(context.getColor(R.color.white))
+                    holder.itemView.setOnClickListener(null)
+                }
+                "available" -> {
+                    holder.tvDate.text = "Livre para agendamento"
+                    holder.itemView.setBackgroundResource(R.drawable.bg_event_available)
+                    holder.tvTitle.setTextColor(context.getColor(R.color.white))
+                    holder.tvDate.setTextColor(context.getColor(R.color.white))
+                    holder.itemView.setOnClickListener { onItemClick(event) }
+                }
+                else -> {
+                    holder.tvDate.text = formatToPtBr(event.dateStr)
+                    holder.tvTitle.setTextColor(context.getColor(R.color.black))
+                    holder.tvDate.setTextColor(context.getColor(R.color.color_default_dark))
 
-                when (event.status) {
-                    "confirmed" -> holder.itemView.setBackgroundResource(R.drawable.bg_event_confirmed)
-                    "pending"   -> holder.itemView.setBackgroundResource(R.drawable.bg_event_pending)
-                    else        -> holder.itemView.setBackgroundResource(R.drawable.bg_event_default)
+                    when (event.status) {
+                        "confirmed" -> holder.itemView.setBackgroundResource(R.drawable.bg_event_confirmed)
+                        "pending"   -> holder.itemView.setBackgroundResource(R.drawable.bg_event_pending)
+                        else        -> holder.itemView.setBackgroundResource(R.drawable.bg_event_default)
+                    }
+                    holder.itemView.setOnClickListener { onItemClick(event) }
                 }
             }
-
-            holder.itemView.setOnClickListener { onItemClick(event) }
         }
 
         override fun getItemCount() = events.size
