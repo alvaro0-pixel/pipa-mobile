@@ -22,9 +22,12 @@
             android:layout_height="72dp"
             android:layout_marginStart="20dp"
             android:layout_marginTop="20dp"
-            android:background="@drawable/bg_circle_placeholder"
+            android:background="@color/black"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <!--        MUDEI O BACKGROUND PARA CONSEGUIR RODAR O APP. ASS: ÁLVARO
+        ANTES ESTAVA PUXANDO UM DRAWABLE QUE NAO HAVIA SIDO CRIADO-->
 
         <!-- Matrícula -->
 

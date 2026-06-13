@@ -64,7 +64,7 @@ class LoginFragment : BaseFragment() {
 
     private fun loginUser(email: String, password: String) {
         try {
-            FirebaseHelper.getAuth().signInWithEmailAndPassword(email, password)
+            FirebaseHelper.getAuth().signInWithEmailAndPassword("$email@app.com", password)
                 .addOnCompleteListener {
                     task ->
                     if (task.isSuccessful) {

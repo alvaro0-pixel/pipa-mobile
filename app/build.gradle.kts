@@ -51,6 +51,10 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // Kizitonwose Calendar (substitui Applandeo)
+    implementation("com.kizitonwose.calendar:view:2.6.2")
+
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
     implementation("com.google.android.material:material:1.11.0")
     implementation(platform("com.google.firebase:firebase-bom:34.1.0"))
@@ -58,5 +62,4 @@ dependencies {
     implementation("com.google.firebase:firebase-database-ktx:21.0.0")
     implementation("com.google.firebase:firebase-firestore:26.3.0")
     implementation("com.google.firebase:firebase-firestore-ktx:25.1.4")
-
 }
