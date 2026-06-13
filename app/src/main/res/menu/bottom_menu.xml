@@ -19,7 +19,7 @@
         android:icon="@drawable/ic_card"/>
 
     <item android:id="@+id/bottom_calendar"
-        android:title="Agendamento"
+        android:title="Calendário"
         android:icon="@drawable/ic_calendar"/>
 
 </menu>

@@ -5,10 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity"
-
-    >
+    android:layout_height="match_parent">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
@@ -24,13 +21,9 @@
                 android:layout_height="?attr/actionBarSize"
                 android:background="@color/white"
                 app:navigationIcon="@drawable/ic_menu"
-                android:elevation="4dp"
-                >
-
-            </com.google.android.material.appbar.MaterialToolbar>
+                android:elevation="4dp" />
         </com.google.android.material.appbar.AppBarLayout>
 
-        <!-- Conteúdo principal — se ancora abaixo da toolbar e acima da bottom bar -->
         <FrameLayout
             android:id="@+id/fragment_container"
             android:layout_width="match_parent"
@@ -38,7 +31,6 @@
             android:background="@color/color_default"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
 
-        <!-- BottomAppBar como filho direto do CoordinatorLayout -->
         <com.google.android.material.bottomappbar.BottomAppBar
             android:id="@+id/bottomAppbar"
             android:layout_width="match_parent"
@@ -59,7 +51,6 @@
                 app:menu="@menu/bottom_menu"/>
 
         </com.google.android.material.bottomappbar.BottomAppBar>
-
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
