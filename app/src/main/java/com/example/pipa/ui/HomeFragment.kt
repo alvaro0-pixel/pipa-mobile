@@ -1,5 +1,6 @@
 package com.example.pipa.ui
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -115,36 +116,17 @@ class HomeFragment : Fragment() {
                         tvNextEventDate.text = "Fique atento às suas turmas"
                     }
 
-                    // 3. Busca a sala vinculada
-                    val userRole = userSnapshot.getString("role") ?: "student"
+                    // 3. Exibe a última sala acessada localmente
+                    val prefs = requireContext().getSharedPreferences("pipa_prefs", Context.MODE_PRIVATE)
+                    val lastClassroomName    = prefs.getString("last_classroom_name", null)
+                    val lastClassroomTeacher = prefs.getString("last_classroom_teacher", null)
 
-                    if (userRole == "teacher") {
-                        val teacherClasses = db.collection("Classrooms")
-                            .whereEqualTo("tenured-teacher", currentUid)
-                            .limit(1)
-                            .get().await()
-
-                        if (!teacherClasses.isEmpty) {
-                            val targetClass = teacherClasses.documents[0]
-                            tvRecentClassName.text = targetClass.getString("curricular-unit") ?: "Sem nome"
-                            tvRecentClassTeacher.text = "Você é o professor regente"
-                        }
+                    if (lastClassroomName != null) {
+                        tvRecentClassName.text    = lastClassroomName
+                        tvRecentClassTeacher.text = lastClassroomTeacher ?: ""
                     } else {
-                        val studentClasses = db.collection("Classrooms")
-                            .limit(1)
-                            .get().await()
-
-                        if (!studentClasses.isEmpty) {
-                            val targetClass = studentClasses.documents[0]
-                            tvRecentClassName.text = targetClass.getString("curricular-unit") ?: "Sem nome"
-
-                            val teacherId = targetClass.getString("tenured-teacher") ?: ""
-                            if (teacherId.isNotEmpty()) {
-                                val teacherDoc = db.collection("Users").document(teacherId).get().await()
-                                val teacherName = teacherDoc.getString("name") ?: "Desconhecido"
-                                tvRecentClassTeacher.text = "Prof: $teacherName"
-                            }
-                        }
+                        tvRecentClassName.text    = "Nenhuma sala acessada"
+                        tvRecentClassTeacher.text = "Acesse uma turma para vê-la aqui"
                     }
                 }
 
