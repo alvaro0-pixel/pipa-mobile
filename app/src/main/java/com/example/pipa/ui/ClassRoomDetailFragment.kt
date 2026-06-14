@@ -1,6 +1,7 @@
 package com.example.pipa.ui
 
 import android.app.AlertDialog
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
@@ -209,6 +210,17 @@ class ClassroomDetailFragment : Fragment() {
         val dot: View       = view.findViewById(R.id.view_dot)
     }
 
+    // ─── NOVO: salva a última sala acessada no dispositivo ───────────────────
+    private fun saveLastAccessedClassroom(classroomId: String, name: String, teacher: String) {
+        val prefs = requireContext().getSharedPreferences("pipa_prefs", Context.MODE_PRIVATE)
+        prefs.edit()
+            .putString("last_classroom_id", classroomId)
+            .putString("last_classroom_name", name)
+            .putString("last_classroom_teacher", teacher)
+            .apply()
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     private fun loadData() {
         if (classroomId == null) {
             Log.e(TAG, "ERRO: O classroomId veio nulo.")
@@ -234,6 +246,10 @@ class ClassroomDetailFragment : Fragment() {
                         teacherName = teacherSnapshot.getString("name") ?: "Desconhecido"
                         tvTeacherName.text = "Prof: $teacherName"
                     }
+
+                    // ─── NOVO: persiste a sala assim que os dados estão prontos ──
+                    saveLastAccessedClassroom(classroomId!!, curricularUnit, teacherName)
+                    // ─────────────────────────────────────────────────────────────
                 }
 
                 loadCalendarAndEvents()
