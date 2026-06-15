@@ -38,13 +38,6 @@ class LoginFragment : BaseFragment() {
         binding.buttonLogin.setOnClickListener {
             validateData()
         }
-        binding.btnRegister.setOnClickListener {
-            findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
-        }
-
-        binding.btnRecover.setOnClickListener {
-            findNavController().navigate(R.id.action_loginFragment_to_recoverAccountFragment)
-        }
     }
 
     private fun validateData() {
